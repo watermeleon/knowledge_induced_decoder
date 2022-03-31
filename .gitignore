@@ -1,0 +1,15 @@
+venv/
+.idea/
+*.egg-info
+*.DS_Store
+dist/
+build/
+_build/
+*.pyc
+*.pth
+*/__pycache__/
+*.pkl
+tensorboard_logs/
+annotations/
+*.gz
+/evaluation/meteor/data/
