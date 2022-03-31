@@ -47,15 +47,10 @@ class MeshedDecoderLayer(Module):
 
 class MeshedDecoder(Module):
     def __init__(self, vocab_size, max_len, N_dec, padding_idx, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1,
-                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None, transform_tok =None, device = None, on_lisa=True, edge_select="random", spec = None, seg_token=False,KG = None, pt_embs=None):
+                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None, transform_tok =None, device = None, on_lisa=True, edge_select="random", spec = None, seg_token=False,KG = None):
         super(MeshedDecoder, self).__init__()
         self.d_model = d_model
-        if pt_embs is not None:
-            self.word_emb = pt_embs
-            print("freezing the pretrained token embeddings")
-            self.word_emb.weight.requires_grad=False
-        else:
-            self.word_emb = nn.Embedding(vocab_size, d_model, padding_idx=padding_idx)
+        self.word_emb = nn.Embedding(vocab_size, d_model, padding_idx=padding_idx)
         self.pos_emb = nn.Embedding.from_pretrained(sinusoid_encoding_table(max_len + 1, d_model, 0), freeze=True)
         self.layers = ModuleList(
             [MeshedDecoderLayer(d_model, d_k, d_v, h, d_ff, dropout, self_att_module=self_att_module,
@@ -109,13 +104,17 @@ class MeshedDecoder(Module):
         seq = seq.masked_fill(mask_queries.squeeze(-1) == 0, 0)
 
         if self._is_stateful:
+            # print("I AM SO FULL")
             self.running_mask_self_attention = torch.cat([self.running_mask_self_attention, mask_self_attention], -1)
             mask_self_attention = self.running_mask_self_attention
             self.running_seq.add_(1)
             seq = self.running_seq + self.max_pref
             if self.stateful_1 == 1:
+                # self.running_seq.add_(max_pref)
+                # print("segb, masatt:", seg_batch.unsqueeze(1).unsqueeze(1).size(), mask_self_attention_copy.size())
                 self.running_mask_self_attention = torch.cat([seg_batch.unsqueeze(1).unsqueeze(1), mask_self_attention_copy], -1)
-
+            # print("test self masks:", self.running_mask_self_attention, mask_self_attention)
+        # print("stateful1 is:", self.stateful_1)
 
         # if statefull and not first number skip this
         if  self.stateful_1 < 2:
@@ -138,9 +137,10 @@ class MeshedDecoder(Module):
             seq = torch.cat((position_batch, seq),-1)
         else:
             combi_mask = mask_self_attention
-
+        # print("input, seq:", input, seq)
         wordemb = self.word_emb(input)
         posemb = self.pos_emb(seq)
+        # print("word emb, pos emb siz:", wordemb.size(), posemb.size())
         out =  wordemb + posemb 
         if self.seg_token == True and self.stateful_1 < 2:
             out[:,:-seq_len,:] += 1

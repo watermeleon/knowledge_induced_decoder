@@ -1,7 +1,7 @@
 
 import os
 
-os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+# os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 from ast import arg
@@ -25,12 +25,10 @@ import itertools
 import multiprocessing
 from shutil import copyfile
 from torch import autograd
-from transformers import AutoTokenizer, CLIPTokenizer, CLIPTokenizerFast, CLIPTextModel
+from transformers import AutoTokenizer, CLIPTokenizer, CLIPTokenizerFast
 # from torch.utils.data import IterableDataset  
 import cProfile
 import pstats 
-import logging
-import re
 
 # import training_functions 
 random.seed(1234)
@@ -58,13 +56,12 @@ if __name__ == '__main__':
     parser.add_argument('--contextfeat_path', type=str)
     parser.add_argument('--onlisa', type=str, default="True", choices=['True', 'False'])
     parser.add_argument('--seg_token', type=str, default="False", choices=['True', 'False'])
-    parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb', 'clipemb_pretok'])
+    parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb','clipemb_pretok'])
     parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused'])
     parser.add_argument('--tokenizer', type=str, default="bert", choices=['bert', 'clip'])
 
     parser.add_argument('--num_keywords', type=int, default=5)
     parser.add_argument('--num_relatedwords', type=int, default=5)
-    parser.add_argument('--no_relation_label', action='store_true')
 
 
     parser.add_argument('--annotation_folder', type=str)
@@ -73,9 +70,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print(args)
-
-    print("Turing of Huggingface warnings")
-    set_global_logging_level(logging.ERROR, ["transformers"])
 
     print('KG context Transformer Training')
 
@@ -87,16 +81,16 @@ if __name__ == '__main__':
     if args.tokenizer == "bert":
         tokenizerBW = AutoTokenizer.from_pretrained("bert-base-uncased")
     elif args.tokenizer == "clip":
-        tokenizerBW =  CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32")
-        tokenizerBW_dec =  CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
+        tokenizerBW =  CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32", bos_token = "[BOS]", eos_token = "[EOS]", pad_token = "[PAD]")
+        tokenizerBW_dec =  CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32", bos_token = "[BOS]", eos_token = "[EOS]", pad_token = "[PAD]")
     else:
         print("ERROR: unrecogniezed transformer tokenizer:", args.tokenizer)
 
     print("size tokenizer:", len(tokenizerBW))
-    # allrel = ['Antonym', 'AtLocation', 'CapableOf', 'Causes', 'CausesDesire', 'CreatedBy', 'DefinedAs', 'DerivedFrom', 'Desires', 'DistinctFrom', 'Entails', 'EtymologicallyDerivedFrom', 'EtymologicallyRelatedTo', 'FormOf', 'HasA', 'HasContext', 'HasFirstSubevent', 'HasLastSubevent', 'HasPrerequisite', 'HasProperty', 'HasSubevent', 'InstanceOf', 'IsA', 'LocatedNear', 'MadeOf', 'MannerOf', 'MotivatedByGoal', 'NotCapableOf', 'NotDesires', 'NotHasProperty', 'PartOf', 'ReceivesAction', 'RelatedTo', 'SimilarTo', 'SymbolOf', 'Synonym', 'UsedFor', 'capital', 'field', 'genre', 'genus', 'influencedBy', 'knownFor', 'language', 'leader', 'occupation', 'product', "[IMG]"]
-    # tokenizerBW.add_tokens(allrel, special_tokens=True)
-    # if args.tokenizer == "clip":
-    #     tokenizerBW_dec.add_tokens(allrel, special_tokens=True)
+    allrel = ['Antonym', 'AtLocation', 'CapableOf', 'Causes', 'CausesDesire', 'CreatedBy', 'DefinedAs', 'DerivedFrom', 'Desires', 'DistinctFrom', 'Entails', 'EtymologicallyDerivedFrom', 'EtymologicallyRelatedTo', 'FormOf', 'HasA', 'HasContext', 'HasFirstSubevent', 'HasLastSubevent', 'HasPrerequisite', 'HasProperty', 'HasSubevent', 'InstanceOf', 'IsA', 'LocatedNear', 'MadeOf', 'MannerOf', 'MotivatedByGoal', 'NotCapableOf', 'NotDesires', 'NotHasProperty', 'PartOf', 'ReceivesAction', 'RelatedTo', 'SimilarTo', 'SymbolOf', 'Synonym', 'UsedFor', 'capital', 'field', 'genre', 'genus', 'influencedBy', 'knownFor', 'language', 'leader', 'occupation', 'product', "[IMG]"]
+    tokenizerBW.add_tokens(allrel, special_tokens=True)
+    if args.tokenizer == "clip":
+        tokenizerBW_dec.add_tokens(allrel, special_tokens=True)
 
     # initialize training specifications
     cls_tok = tokenizerBW.cls_token
@@ -106,7 +100,6 @@ if __name__ == '__main__':
     spec['eos_tokenid'] =  tokenizerBW.sep_token_id if cls_tok is not None else sample_txt[-1]
     spec['bos_tokenid'] =  tokenizerBW.cls_token_id if cls_tok is not None else sample_txt[0]
     spec['pad_tokenid'] = tokenizerBW.pad_token_id
-    spec['eos_token'] = tokenizerBW.decode(spec['eos_tokenid'])
     spec['tdqm_disable'] = False
     spec["device"] = device
     print("Selected specifications:", spec)
@@ -120,14 +113,13 @@ if __name__ == '__main__':
     # Create the dataset
     dataset = COCO(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder,cocoid_field= clipemb_field)
     train_dataset, val_dataset, test_dataset = dataset.splits
-    baseline_vocab = "vocab_coco_baseline_vocab.pkl"
-    if not os.path.isfile(baseline_vocab):
-        print("Building vocabulary: ERROR this shouldn't be happening")
+    if not os.path.isfile('vocab_%s.pkl' % args.exp_name):
+        print("Building vocabulary")
         text_field.build_vocab(train_dataset, val_dataset, min_freq=5)
         pickle.dump(text_field.vocab, open('vocab_%s.pkl' % args.exp_name, 'wb'))
     else:
-        text_field.vocab = pickle.load(open(baseline_vocab, 'rb'))
-        
+        text_field.vocab = pickle.load(open('vocab_%s.pkl' % args.exp_name, 'rb'))
+
     # Model and dataloaders
     inp_feat_size = args.feat_size
     print("size is of feats set :", args.feat_size)
@@ -136,17 +128,10 @@ if __name__ == '__main__':
 
     onlisa = args.onlisa == "True"
     seg_token = args.seg_token == "True"
-    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords, norel = args.no_relation_label )
-
-    pt_tokembs = True
-    clip_pt_tokembs = None
-    if pt_tokembs is True:
-        cliptext = CLIPTextModel.from_pretrained("openai/clip-vit-base-patch32")
-        clip_pt_tokembs = cliptext.get_input_embeddings()
-
+    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords )
 
     if args.decoder == "kg_infused":
-        decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=128, d_v=128, seg_token= seg_token, KG = knowledge_graph, pt_embs = clip_pt_tokembs )
+        decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=128, d_v=128, seg_token= seg_token, KG = knowledge_graph )
     elif args.decoder == "vanilla":
         decoder = VanillaDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=128, d_v=128)
 

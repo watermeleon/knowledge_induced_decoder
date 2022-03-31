@@ -29,7 +29,7 @@ def evaluate_metrics(model, dataloader, spec, transform_tok = None):
     gen = {}
     gts = {}
     print("now doing eval metrics")
-    eos_str = spec['eos_token']
+
     with tqdm(desc='Epoch %d - evaluation' % e, unit='it', total=len(dataloader), disable=spec['tdqm_disable']) as pbar:
         for it, (images, caps_gt) in enumerate(iter(dataloader)):
             caps_gt, context_feats = caps_gt[0], torch.stack(caps_gt[1])
@@ -48,9 +48,13 @@ def evaluate_metrics(model, dataloader, spec, transform_tok = None):
                 out = out1
 
             caps_gen = [transform_tok.decode(sent) for sent in out] 
-            caps_gen = [sent.split(eos_str)[0] for sent in caps_gen]
+            # print("caps mid", caps_gen1)
+            caps_gen = [sent.split("[EOS]")[0] for sent in caps_gen]
 
-    
+            # caps_gen = [sent.replace("[BOS]","") for sent in caps_gen]
+
+            # print("caps_gen is now:", caps_gen)
+            # print("\n \n")
             for i, (gts_i, gen_i) in enumerate(zip(caps_gt, caps_gen)):
                 # gen_i = ' '.join([k for k, g in itertools.groupby(gen_i)])
                 gen['%d_%d' % (it, i)] = [gen_i, ]
@@ -142,21 +146,3 @@ def train_scst(model, dataloader, optim, cider, text_field):
     reward = running_reward / len(dataloader)
     reward_baseline = running_reward_baseline / len(dataloader)
     return loss, reward, reward_baseline
-
-
-# To control logging level for various modules used in the application:
-def set_global_logging_level(level=logging.ERROR, prefices=[""]):
-    """
-    Override logging levels of different modules based on their name as a prefix.
-    It needs to be invoked after the modules have been loaded so that their loggers have been initialized.
-
-    Args:
-        - level: desired level. e.g. logging.INFO. Optional. Default is logging.ERROR
-        - prefices: list of one or more str prefices to match (e.g. ["transformers", "torch"]). Optional.
-          Default is `[""]` to match all active loggers.
-          The match is a case-sensitive `module_name.startswith(prefix)`
-    """
-    prefix_re = re.compile(fr'^(?:{ "|".join(prefices) })')
-    for name in logging.root.manager.loggerDict:
-        if re.match(prefix_re, name):
-            logging.getLogger(name).setLevel(level)

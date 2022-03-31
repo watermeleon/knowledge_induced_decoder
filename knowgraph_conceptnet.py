@@ -28,13 +28,13 @@ class KnowledgeGraph(object):
     spo_files - list of Path of *.spo files, or default kg name. e.g., ['HowNet']
     """
 
-    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None, on_lisa=True, edge_select="random", spec=None, kw_size = 5, rw_size = 5, norel=False):
+    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None, on_lisa=True, edge_select="random", spec=None, kw_size = 5, rw_size = 5):
         self.predicate = predicate
         self.kw_size = kw_size
         self.rw_size = rw_size
             
         print("using edge select type:", edge_select)
-        self.norel = norel
+
         if edge_select == "random":
             graph_path= '../data_files/concNet_filtBanana_save.pkl'
         elif edge_select == "clipemb":
@@ -124,10 +124,6 @@ class KnowledgeGraph(object):
         combitoklist = []
         for ent in entities:
             combitoks = ent[0] + ent[1]
-            rw_idx = int(not(ent[2]))
-            if self.norel:
-                RW = ent[rw_idx]
-                combitoks = RW
             combitoklist.append(combitoks)
             order_rel.append(ent[2])
         # berttokens = self.transformer_tokenizer(ent_list, padding=False).input_ids

@@ -56,7 +56,7 @@ for keyword, relword_list in CN_dict.items():
             print("len is not 512, emb is:", rw_emb)
 
 
-        rw_rel = relword_item[:-1]
+        rw_rel = relword_item
 
         rw_emb_list.append([rw_rel, rw_emb])
         totemb += 1
