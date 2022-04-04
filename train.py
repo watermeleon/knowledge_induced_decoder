@@ -60,7 +60,9 @@ if __name__ == '__main__':
     parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused'])
     parser.add_argument('--tokenizer', type=str, default="bert", choices=['bert', 'clip'])
 
-    parser.add_argument('--d_att', type=int, default=128)
+    parser.add_argument('--d_att', type=int, default=64)
+    parser.add_argument('--d_model', type=int, default=512)
+
 
     parser.add_argument('--num_keywords', type=int, default=5)
     parser.add_argument('--num_relatedwords', type=int, default=5)
@@ -126,16 +128,16 @@ if __name__ == '__main__':
     inp_feat_size = args.feat_size
     print("size is of feats set :", args.feat_size)
     encoder = MemoryAugmentedEncoder(3, 0, d_in=inp_feat_size,  attention_module=ScaledDotProductAttention,
-                                     attention_module_kwargs={'m': args.m})
+                                     attention_module_kwargs={'m': args.m}, d_model= args.d_model)
 
     onlisa = args.onlisa == "True"
     seg_token = args.seg_token == "True"
     knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords )
 
     if args.decoder == "kg_infused":
-        decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph )
+        decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , d_model= args.d_model)
     elif args.decoder == "vanilla":
-        decoder = VanillaDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att)
+        decoder = VanillaDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, d_model= args.d_model)
 
     model = Transformer(spec['bos_tokenid'], encoder, decoder).to(device)
 
