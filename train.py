@@ -60,6 +60,8 @@ if __name__ == '__main__':
     parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused'])
     parser.add_argument('--tokenizer', type=str, default="bert", choices=['bert', 'clip'])
 
+    parser.add_argument('--d_att', type=int, default=128)
+
     parser.add_argument('--num_keywords', type=int, default=5)
     parser.add_argument('--num_relatedwords', type=int, default=5)
 
@@ -131,9 +133,9 @@ if __name__ == '__main__':
     knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords )
 
     if args.decoder == "kg_infused":
-        decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=128, d_v=128, seg_token= seg_token, KG = knowledge_graph )
+        decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph )
     elif args.decoder == "vanilla":
-        decoder = VanillaDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=128, d_v=128)
+        decoder = VanillaDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att)
 
     model = Transformer(spec['bos_tokenid'], encoder, decoder).to(device)
 
