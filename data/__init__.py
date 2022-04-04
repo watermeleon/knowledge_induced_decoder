@@ -1,4 +1,4 @@
-from .field import RawField, ImageDetectionsField, TextField, ClipEmbDetectionsField
+from .field import RawField, ImageDetectionsField, TextField
 from .dataset import COCO
 from torch.utils.data import DataLoader as TorchDataLoader
 

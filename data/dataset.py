@@ -18,10 +18,9 @@ class Dataset(object):
     def __init__(self, examples, fields):
         self.examples = examples
         self.fields = dict(fields)
-        # print("examples is:", examples)
+
     def collate_fn(self):
         def collate(batch):
-            # print("heyhoi")
             if len(self.fields) == 1:
                 batch = [batch, ]
             else:
@@ -84,6 +83,7 @@ class ValueDataset(Dataset):
     def __getitem__(self, i):
         if i not in self.dictionary:
             raise IndexError
+
         values_data = []
         for idx in self.dictionary[i]:
             value_data = super(ValueDataset, self).__getitem__(idx)
@@ -106,22 +106,20 @@ class DictionaryDataset(Dataset):
         value_fields = {k: fields[k] for k in fields.keys() if k not in key_fields}
         key_examples = []
         key_dict = dict()
-
         value_examples = []
-        for i, e in enumerate(examples):
 
+        for i, e in enumerate(examples):
             key_example = Example.fromdict({k: getattr(e, k) for k in key_fields})
             value_example = Example.fromdict({v: getattr(e, v) for v in value_fields})
-            cocoid_example = e.img_id
             if key_example not in key_dict:
                 key_dict[key_example] = len(key_examples)
                 key_examples.append(key_example)
+
             value_examples.append(value_example)
             dictionary[key_dict[key_example]].append(i)
 
         self.key_dataset = Dataset(key_examples, key_fields)
         self.value_dataset = ValueDataset(value_examples, value_fields, dictionary)
-
         super(DictionaryDataset, self).__init__(examples, fields)
 
     def collate_fn(self):
@@ -152,10 +150,6 @@ class PairedDataset(Dataset):
         assert ('image' in fields)
         assert ('text' in fields)
         super(PairedDataset, self).__init__(examples, fields)
-        # print("in paired, Dataset type:", type(Dataset()))
-        # print("option2:", Dataset().__class__.__name__)
-        # print("Is Dataset it an IterableDat?", isinstance(Dataset, IterableDataset))
-
         self.image_field = self.fields['image']
         self.text_field = self.fields['text']
 
@@ -192,7 +186,7 @@ class PairedDataset(Dataset):
 
 class COCO(PairedDataset):
     def __init__(self, image_field, text_field, img_root, ann_root, id_root=None, use_restval=True,
-                 cut_validation=False, cocoid_field=None):
+                 cut_validation=False):
         roots = {}
         roots['train'] = {
             'img': os.path.join(img_root, 'train2014'),
@@ -232,15 +226,13 @@ class COCO(PairedDataset):
             self.train_examples, self.val_examples, self.test_examples = self.get_samples(roots, ids)
         # print("these are train samples:",len(self.train_examples))
         examples = self.train_examples + self.val_examples + self.test_examples
-        super(COCO, self).__init__(examples, {'image': image_field, 'text': text_field, "img_id":cocoid_field})
+        super(COCO, self).__init__(examples, {'image': image_field, 'text': text_field})
 
     @property
     def splits(self):
         train_split = PairedDataset(self.train_examples, self.fields)
         val_split = PairedDataset(self.val_examples, self.fields)
         test_split = PairedDataset(self.test_examples, self.fields)
-        # print("Is PairedDataset it an IterableDat?", isinstance(PairedDataset, IterableDataset))
-
         return train_split, val_split, test_split
 
     @classmethod
@@ -280,9 +272,8 @@ class COCO(PairedDataset):
                 caption = coco.anns[ann_id]['caption']
                 img_id = coco.anns[ann_id]['image_id']
                 filename = coco.loadImgs(img_id)[0]['file_name']
-                # print("img_id", img_id, filename, img_id, type(img_id))
 
-                example = Example.fromdict({'image': os.path.join(img_root, filename), 'text': caption, 'img_id' : img_id})
+                example = Example.fromdict({'image': os.path.join(img_root, filename), 'text': caption})
 
                 if split == 'train':
                     train_samples.append(example)
@@ -291,4 +282,3 @@ class COCO(PairedDataset):
                 elif split == 'test':
                     test_samples.append(example)
         return train_samples, val_samples, test_samples
-

@@ -6,7 +6,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 from ast import arg
 import random
-from data import ImageDetectionsField, TextField, RawField, ClipEmbDetectionsField
+from data import ImageDetectionsField, TextField, RawField
 from data import COCO, DataLoader
 import evaluation
 from evaluation import PTBTokenizer, Cider
@@ -109,11 +109,11 @@ if __name__ == '__main__':
     # Pipeline for image regions
     image_field = ImageDetectionsField(detections_path=args.features_path, max_detections=50, load_in_tmp=False)
     # get the 1d clip emb features
-    clipemb_field = ClipEmbDetectionsField(detections_path=args.contextfeat_path, load_in_tmp=False)
+    # clipemb_field = ClipEmbDetectionsField(detections_path=args.contextfeat_path, load_in_tmp=False)
     # Pipeline for text
     text_field = TextField(pad_token='[PAD]', lower=True, tokenize='spacy', remove_punctuation=True, nopoints=False, transform_tok = tokenizerBW, use_vocab= False)
     # Create the dataset
-    dataset = COCO(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder,cocoid_field= clipemb_field)
+    dataset = COCO(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder)
     train_dataset, val_dataset, test_dataset = dataset.splits
     if not os.path.isfile('vocab_%s.pkl' % args.exp_name):
         print("Building vocabulary")
@@ -139,11 +139,11 @@ if __name__ == '__main__':
 
     model = Transformer(spec['bos_tokenid'], encoder, decoder).to(device)
 
-    dict_dataset_train = train_dataset.image_dictionary({'image': image_field, 'text': RawField(), "img_id": clipemb_field})
+    dict_dataset_train = train_dataset.image_dictionary({'image': image_field, 'text': RawField()})
     ref_caps_train = list(train_dataset.text)
     cider_train = Cider(PTBTokenizer.tokenize(ref_caps_train))
-    dict_dataset_val = val_dataset.image_dictionary({'image': image_field, 'text': RawField(), "img_id": clipemb_field})
-    dict_dataset_test = test_dataset.image_dictionary({'image': image_field, 'text': RawField(), "img_id": clipemb_field})
+    dict_dataset_val = val_dataset.image_dictionary({'image': image_field, 'text': RawField()})
+    dict_dataset_test = test_dataset.image_dictionary({'image': image_field, 'text': RawField()})
 
 
     def lambda_lr(s):

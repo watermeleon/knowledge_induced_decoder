@@ -1,3 +1,5 @@
+from zmq import device
+
 
 def evaluate_loss(model, dataloader, loss_fn, spec, vocab_size):
     # Validation loss
@@ -8,9 +10,10 @@ def evaluate_loss(model, dataloader, loss_fn, spec, vocab_size):
     i = 0
     with tqdm(desc='Epoch %d - validation' % e, unit='it', total=len(dataloader),  disable=spec['tdqm_disable']) as pbar:
         with torch.no_grad():
-            for it, (detections, captions, context_feats) in enumerate(dataloader):
-                detections, captions, context_feats = detections.to(device), captions.to(device), context_feats.to(device)
-                out = model(detections, captions, context_feats)
+            for it, (detections, captions) in enumerate(dataloader):
+                detections, captions = detections.to(device), captions.to(device)
+                contextfeat = None
+                out = model(detections, captions, contextfeat)
                 captions = captions[:, 1:].contiguous()
                 out = out[:, :-1].contiguous()
                 loss = loss_fn(out.view(-1, vocab_size), captions.view(-1))
@@ -32,9 +35,9 @@ def evaluate_metrics(model, dataloader, spec, transform_tok = None):
 
     with tqdm(desc='Epoch %d - evaluation' % e, unit='it', total=len(dataloader), disable=spec['tdqm_disable']) as pbar:
         for it, (images, caps_gt) in enumerate(iter(dataloader)):
-            caps_gt, context_feats = caps_gt[0], torch.stack(caps_gt[1])
-            context_feats = context_feats[:,0,:,:]
-            images, context_feats = images.to(device), context_feats.to(device)
+            # caps_gt, context_feats = caps_gt[0], torch.stack(caps_gt[1])
+            context_feats = torch.zeros_like(images).to(device)
+            images = images.to(device)
             with torch.no_grad():
                 out, _ = model.beam_search(images, context_feats, 20, spec['eos_tokenid'], 5, out_size=1)
             # print(" \n GT caps:", caps_gt)
@@ -77,9 +80,10 @@ def train_xe(model, dataloader, optim, spec, vocab_size):
     # profile = cProfile.Profile()
     # profile.enable()
     with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=spec['tdqm_disable']) as pbar:
-        for it, (detections, captions, context_feats) in enumerate(dataloader):
-            detections, captions, context_feats = detections.to(device), captions.to(device), context_feats.to(device)
-            out = model(detections, captions, context_feats)
+        for it, (detections, captions) in enumerate(dataloader):
+            detections, captions = detections.to(device), captions.to(device)
+            contextfeat = None
+            out = model(detections, captions, contextfeat)
             optim.zero_grad()
             captions_gt = captions[:, 1:].contiguous()
 
