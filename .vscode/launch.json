@@ -9,7 +9,7 @@
             "request": "launch",
             "program": "train.py",
             "console": "integratedTerminal",
-            "args":["--exp_name" ,"kginf_segtok_temp",  "--features_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_prepool.h5", "--annotation_folder", "./annotations",  "--contextfeat_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", "--feat_size", "768","--batch_size", "10", "--onlisa", "False", "--decoder", "vanilla", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--d_att", "384", "--head", "6"]
+            "args":["--exp_name" ,"kginf_segtok_temp",  "--features_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_prepool.h5", "--annotation_folder", "./annotations",  "--contextfeat_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", "--feat_size", "768","--batch_size", "10", "--onlisa", "False", "--decoder", "vanilla", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--d_model", "384", "--head", "6"]
         }
 
         {
