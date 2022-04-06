@@ -42,8 +42,7 @@ for keyword, relword_list in CN_dict.items():
         # l2r edge is 0, so need to invert the binary
         rw_idx = int(not(relword_item[-1]))
         related_word = relword_item[rw_idx]
-        # rw_tok = tokenizerBW(related_word, padding=True, return_tensors="pt").to(device)
-        
+                
         if related_word not in cn_wordfeats:
             print("not in wordfeats")
         try:

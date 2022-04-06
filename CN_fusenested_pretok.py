@@ -12,8 +12,8 @@ import torch
 tokenizerBW =  CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
 
 
-pth_clipemb = "../data_files/concNetFilt_emb_Banana_lisa2_pretok.pkl"
-# pth_clipemb = "/media/leonardo/Floppy/concNetFilt_emb_Banana_lisa2.pkl"
+# pth_clipemb = "../data_files/concNetFilt_emb_Banana_lisa2_pretok.pkl"
+pth_clipemb = "/media/leonardo/Floppy/concNetFilt_emb_Banana_lisa2.pkl"
 with open(pth_clipemb, 'rb') as f:
             CN_dict = pickle.load(f)
 
@@ -34,7 +34,7 @@ device = torch.device('cuda')
 CN_wordsNemb_dict = {}
 i = 0
 
-out_path = "../data_files/concNetFilt_emb_Banana_lisa2_pretok2.pkl"
+out_path = "../data_files/concNetFilt_emb_Banana_lisa2_pretok.pkl"
 
 file_to_store = open(out_path, "wb")
 
@@ -56,10 +56,10 @@ for keyword, relword_list in CN_dict.items():
         # word1 or 2 could either be relation or RW, doesn't mather for here
         word1 = relword_item[0][0].tolist()
         word2 = relword_item[0][1].tolist()
-        # tokword1 = tokenizerBW(word1, padding=True, return_tensors="pt").input_ids.squeeze()
-        # tokword2 = tokenizerBW(word2, padding=True, return_tensors="pt").input_ids.squeeze()
-        relword_item[0][0] = word1
-        relword_item[0][1] = word2
+        tokword1 = tokenizerBW(word1, padding=True, return_tensors="pt").input_ids.squeeze()
+        tokword2 = tokenizerBW(word2, padding=True, return_tensors="pt").input_ids.squeeze()
+        relword_item[0][0] = tokword1
+        relword_item[0][1] = tokword2
 
         rw_emb_list.append(relword_item)
         totemb += 1
