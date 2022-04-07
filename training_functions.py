@@ -41,17 +41,14 @@ def evaluate_metrics(model, dataloader, spec, transform_tok = None):
             with torch.no_grad():
                 out, _ = model.beam_search(images, context_feats, 20, spec['eos_tokenid'], 5, out_size=1)
             # print(" \n GT caps:", caps_gt)
-            # out = [[word.it for word in sent if word !=0] for sent in out]
             # print("out is:", out)
             
             # if using fast tokenizer, replace <|endoftext|> token id with the [EOS] tokenid
             endtexttokid = 49407
             if endtexttokid in out:
-                out1 = torch.tensor([[tokenid if tokenid != endtexttokid else 49409 for tokenid in sent ] for sent in out])
-                out = out1
+                out = torch.tensor([[tokenid if tokenid != endtexttokid else 49409 for tokenid in sent ] for sent in out])
 
             caps_gen = [transform_tok.decode(sent) for sent in out] 
-            # print("caps mid", caps_gen1)
             caps_gen = [sent.split("[EOS]")[0] for sent in caps_gen]
 
             # caps_gen = [sent.replace("[BOS]","") for sent in caps_gen]
@@ -71,45 +68,9 @@ def evaluate_metrics(model, dataloader, spec, transform_tok = None):
     return scores
 
 
-def train_xe(model, dataloader, optim, spec, vocab_size):
-    # Training with cross-entropy
-    model.train()
-    running_loss = .0
-    i = 0
-    print("training XE")
-    # profile = cProfile.Profile()
-    # profile.enable()
-    with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=spec['tdqm_disable']) as pbar:
-        for it, (detections, captions) in enumerate(dataloader):
-            detections, captions = detections.to(device), captions.to(device)
-            contextfeat = None
-            out = model(detections, captions, contextfeat)
-            optim.zero_grad()
-            captions_gt = captions[:, 1:].contiguous()
-
-            out = out[:, :-1].contiguous()
-            loss = loss_fn(out.view(-1, vocab_size), captions_gt.view(-1))
-            loss.backward()
-
-            optim.step()
-            this_loss = loss.item()
-            running_loss += this_loss
-
-            pbar.set_postfix(loss=running_loss / (it + 1))
-            pbar.update()
-            scheduler.step()
-
-    #         if i >25:
-    #             break
-    #         i +=1
-    # profile.disable()
-    # ps = pstats.Stats(profile)
-    # ps.print_stats()
-    loss = running_loss / len(dataloader)
-    return loss
 
 
-def train_scst(model, dataloader, optim, cider, text_field):
+def train_scst(model, dataloader, optim, cider, spec, transform_tok):
     # Training with self-critical
     tokenizer_pool = multiprocessing.Pool()
     running_reward = .0
@@ -120,12 +81,16 @@ def train_scst(model, dataloader, optim, cider, text_field):
     beam_size = 5
     print("trainin SCTS")
     with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=True) as pbar:
-        for it, (detections, caps_gt, cocoid) in enumerate(dataloader):
+        for it, (detections, caps_gt) in enumerate(dataloader):
             detections = detections.to(device)
-            outs, log_probs = model.beam_search(detections, seq_len, eos_tokenid,
+            context_feats = torch.zeros_like(detections).to(device)
+
+            outs, log_probs = model.beam_search(detections, 20, spec['eos_tokenid'],
                                                 beam_size, out_size=beam_size)
             optim.zero_grad()
 
+            # TODO: have to fix this: how to decode when multi sent are returned
+            quit()
             # Rewards
             caps_gen = text_field.decode(outs.view(-1, seq_len))
             caps_gt = list(itertools.chain(*([c, ] * beam_size for c in caps_gt)))
@@ -150,3 +115,35 @@ def train_scst(model, dataloader, optim, cider, text_field):
     reward = running_reward / len(dataloader)
     reward_baseline = running_reward_baseline / len(dataloader)
     return loss, reward, reward_baseline
+
+
+
+def train_xe(model, dataloader, optim, spec, vocab_size):
+    # Training with cross-entropy
+    model.train()
+    running_loss = .0
+    i = 0
+    print("training XE")
+
+    with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=spec['tdqm_disable']) as pbar:
+        for it, (detections, captions) in enumerate(dataloader):
+            detections, captions = detections.to(device), captions.to(device)
+            contextfeat = None
+            out = model(detections, captions, contextfeat)
+            optim.zero_grad()
+            captions_gt = captions[:, 1:].contiguous()
+
+            out = out[:, :-1].contiguous()
+            loss = loss_fn(out.view(-1, vocab_size), captions_gt.view(-1))
+            loss.backward()
+
+            optim.step()
+            this_loss = loss.item()
+            running_loss += this_loss
+
+            pbar.set_postfix(loss=running_loss / (it + 1))
+            pbar.update()
+            scheduler.step()
+
+    loss = running_loss / len(dataloader)
+    return loss

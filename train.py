@@ -201,7 +201,7 @@ if __name__ == '__main__':
             train_loss = train_xe(model, dataloader_train, optim, spec, len(tokenizerBW))
             writer.add_scalar('data/train_loss', train_loss, e)
         else:
-            train_loss, reward, reward_baseline = train_scst(model, dict_dataloader_train, optim, cider_train, spec)
+            train_loss, reward, reward_baseline = train_scst(model, dict_dataloader_train, optim, cider_train, spec, transform_tok = tokenizerBW_dec)
             writer.add_scalar('data/train_loss', train_loss, e)
             writer.add_scalar('data/reward', reward, e)
             writer.add_scalar('data/reward_baseline', reward_baseline, e)

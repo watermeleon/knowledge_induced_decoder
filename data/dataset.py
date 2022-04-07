@@ -46,6 +46,9 @@ class Dataset(object):
         data = []
         for field_name, field in self.fields.items():
             data.append(field.preprocess(getattr(example, field_name)))
+            # if field_name == "image":
+                # print("example:", getattr(example, "image"))
+
 
         if len(data) == 1:
             data = data[0]
