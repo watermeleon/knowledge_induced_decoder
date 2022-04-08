@@ -2,27 +2,31 @@
 from knowgraph_conceptnet import KnowledgeGraph
 import numpy as np
 
-from transformers import  CLIPTokenizer
+from transformers import  CLIPTokenizer, CLIPTokenizerFast
 import pickle
 import torch
 import argparse
+import clip
 
 
+allrel = ['Antonym', 'AtLocation', 'CapableOf', 'Causes', 'CausesDesire', 'CreatedBy', 'DefinedAs', 'DerivedFrom', 'Desires', 'DistinctFrom', 'Entails', 'EtymologicallyDerivedFrom', 'EtymologicallyRelatedTo', 'FormOf', 'HasA', 'HasContext', 'HasFirstSubevent', 'HasLastSubevent', 'HasPrerequisite', 'HasProperty', 'HasSubevent', 'InstanceOf', 'IsA', 'LocatedNear', 'MadeOf', 'MannerOf', 'MotivatedByGoal', 'NotCapableOf', 'NotDesires', 'NotHasProperty', 'PartOf', 'ReceivesAction', 'RelatedTo', 'SimilarTo', 'SymbolOf', 'Synonym', 'UsedFor', 'capital', 'field', 'genre', 'genus', 'influencedBy', 'knownFor', 'language', 'leader', 'occupation', 'product']
 
-def create_nested(clipmodel):
+def create_nested(clipmodel, pretok):
+    print("started creating nested dict...")
     # load the nested dict
     pth_clipemb = "../data_files/concNet_filtBanana_save.pkl"
     with open(pth_clipemb, 'rb') as f:
                 CN_dict = pickle.load(f)
 
+    pretok_label = "_pretok" if pretok else ""
     if clipmodel == "huggingface":
-        tokenizerBW =  CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
+        tokenizerBW =  CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32")
         cn_wordfeats_path = "../Datasets/conceptNet_embedding_hf_lisa_2.pkl"
-        out_path = "../data_files/concNetFilt_emb_Banana_lisa2.pkl"
+        out_path = "../data_files/concNetFilt_emb_Banana_lisa2" + pretok_label + ".pkl"
 
     else: 
         cn_wordfeats_path = "../data_files/conceptNet_embedding_rn50x4.pkl"
-        out_path = "../data_files/concNet_nested_emb_rn50x4.pkl"
+        out_path = "../data_files/concNet_nested_emb_rn50x4" + pretok_label + ".pkl"
 
     # load the stored embeddings:
     with open(cn_wordfeats_path, 'rb') as f:
@@ -31,9 +35,6 @@ def create_nested(clipmodel):
         cn_wordfeats =  {str(k).encode('latin-1').decode('utf-8') : v for k,v in cn_wordfeats.items()}
 
     file_to_store = open(out_path, "wb")
-
-    # device = torch.device('cpu')
-    # device = torch.device('cuda')
 
     CN_wordsNemb_dict = {}
     totemb = 0
@@ -44,14 +45,17 @@ def create_nested(clipmodel):
             # l2r edge is 0, so need to invert the binary
             rw_idx = int(not(relword_item[-1]))
             related_word = relword_item[rw_idx]
-
-            # assert related_word in cn_wordfeats, "related word not in wordfeats"
-            try:
-                rw_emb = cn_wordfeats[related_word]
-            except:
-                print("kw, relword:", keyword, relword_item)
-                quit()
-
+            assert related_word in cn_wordfeats, "related word not in wordfeats"
+            rw_emb = cn_wordfeats[related_word]
+            if pretok:
+                word1, word2 = relword_item[0], relword_item[1]
+                if clipmodel == "huggingface":
+                    tokword1 = tokenizerBW(word1, padding=True, return_tensors="pt").input_ids.squeeze()
+                    tokword2 = tokenizerBW(word2, padding=True, return_tensors="pt").input_ids.squeeze()
+                else:
+                    tokword1 = clip.tokenize(word1).squeeze().tolist()
+                    tokword2 = clip.tokenize(word2).squeeze().tolist()
+                relword_item = [tokword1, tokword2, relword_item[-1]]
             rw_emb_list.append([relword_item, rw_emb])
             totemb += 1
 
@@ -66,11 +70,8 @@ def create_nested(clipmodel):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--clipmodel', default="clip_github", choices=('clip_github','huggingface'))
-    parser.add_argument('--createfile', default="nested_with_emb", choices=('nested_with_emb','nested_pretok'))
-
+    parser.add_argument('--pretok', action='store_true')
     args = parser.parse_args()
-    if args.createfile == "nested_with_emb":
-        create_nested(args.clipmodel)
-    elif args.createfile == "nested_pretok":
-        create_pretok(args.clipmodel)
-    # exit(main(args.clipmodel))
+
+    create_nested(args.clipmodel, True)
+
