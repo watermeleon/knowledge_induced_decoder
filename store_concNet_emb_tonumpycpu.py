@@ -67,7 +67,8 @@ for word_list in cn_wordfeats.keys():
         #     word_tok = clip.tokenize(word).to(device)
         #     prefix  = model.encode_text(word_tok)
     prefix = cn_wordfeats[word].squeeze().detach().cpu().numpy()
-    pick_dict[word] = prefix
+    word2 = str(word).encode('latin-1').decode('utf-8')
+    pick_dict[word2] = prefix
 
     if i%1000 == 0:
         print(i)
