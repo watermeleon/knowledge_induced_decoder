@@ -29,6 +29,7 @@ from transformers import AutoTokenizer, CLIPTokenizer, CLIPTokenizerFast
 # from torch.utils.data import IterableDataset  
 import cProfile
 import pstats 
+import ftfy
 
 # import training_functions 
 random.seed(1234)
@@ -89,7 +90,9 @@ if __name__ == '__main__':
         print("ERROR: unrecogniezed transformer tokenizer:", args.tokenizer)
 
     print("size tokenizer:", len(tokenizerBW))
-    allrel = ['Antonym', 'AtLocation', 'CapableOf', 'Causes', 'CausesDesire', 'CreatedBy', 'DefinedAs', 'DerivedFrom', 'Desires', 'DistinctFrom', 'Entails', 'EtymologicallyDerivedFrom', 'EtymologicallyRelatedTo', 'FormOf', 'HasA', 'HasContext', 'HasFirstSubevent', 'HasLastSubevent', 'HasPrerequisite', 'HasProperty', 'HasSubevent', 'InstanceOf', 'IsA', 'LocatedNear', 'MadeOf', 'MannerOf', 'MotivatedByGoal', 'NotCapableOf', 'NotDesires', 'NotHasProperty', 'PartOf', 'ReceivesAction', 'RelatedTo', 'SimilarTo', 'SymbolOf', 'Synonym', 'UsedFor', 'capital', 'field', 'genre', 'genus', 'influencedBy', 'knownFor', 'language', 'leader', 'occupation', 'product', "[IMG]"]
+    allrel = ['<|Antonym|>', '<|AtLocation|>', '<|CapableOf|>', '<|Causes|>', '<|CausesDesire|>', '<|CreatedBy|>', '<|DefinedAs|>', '<|DerivedFrom|>', '<|Desires|>', '<|DistinctFrom|>', '<|Entails|>', '<|EtymologicallyDerivedFrom|>', '<|EtymologicallyRelatedTo|>', '<|FormOf|>', '<|HasA|>', '<|HasContext|>', '<|HasFirstSubevent|>', '<|HasLastSubevent|>', '<|HasPrerequisite|>', '<|HasProperty|>', '<|HasSubevent|>', '<|InstanceOf|>', '<|IsA|>', '<|LocatedNear|>', '<|MadeOf|>', '<|MannerOf|>', '<|MotivatedByGoal|>', '<|NotCapableOf|>', '<|NotDesires|>', '<|NotHasProperty|>', '<|PartOf|>', '<|ReceivesAction|>', '<|RelatedTo|>', '<|SimilarTo|>', '<|SymbolOf|>', '<|Synonym|>', '<|UsedFor|>', '<|capital|>', '<|field|>', '<|genre|>', '<|genus|>', '<|influencedBy|>', '<|knownFor|>', '<|language|>', '<|leader|>', '<|occupation|>', '<|product|>']
+    allrel = [ftfy.fix_text(rel) for rel in allrel]
+
     tokenizerBW.add_tokens(allrel, special_tokens=True)
     if args.tokenizer == "clip":
         tokenizerBW_dec.add_tokens(allrel, special_tokens=True)

@@ -61,9 +61,11 @@ for word_list in all_conceptnetwords:
             pefix =  prefix.squeeze().detach().cpu().numpy()
         else:
             word_tok = clip.tokenize(word).to(device)
-            prefix  = model.encode_text(word_tok)
+            prefix  = model.encode_text(word_tok).squeeze().detach().cpu().numpy()
 
-    pick_dict[word] = prefix
+
+    word2 = str(word).encode('latin-1').decode('utf-8')
+    pick_dict[word2] = prefix
 
     if i%1000 == 0:
         print(i)

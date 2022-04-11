@@ -36,7 +36,7 @@ class KnowledgeGraph(object):
         print("using edge select type:", edge_select)
 
         if edge_select == "random":
-            graph_path= '../data_files/concNet_filtBanana_save.pkl'
+            graph_path= '../data_files/conceptnet_filt_nest.pkl'
         elif edge_select == "clipemb":
             graph_path= '../data_files/concNetFilt_emb_Banana_lisa2_save.pkl'
         elif edge_select == "clipemb_pretok":
