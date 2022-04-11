@@ -82,5 +82,5 @@ if __name__ == '__main__':
     parser.add_argument('--pretok', action='store_true')
     args = parser.parse_args()
 
-    create_nested(args.clipmodel, True)
+    create_nested(args.clipmodel, args.pretok)
 
