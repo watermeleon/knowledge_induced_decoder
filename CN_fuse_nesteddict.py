@@ -25,7 +25,7 @@ def create_nested(clipmodel, pretok):
 
     pretok_label = "_pretok" if pretok else ""
     if clipmodel == "huggingface":
-        cn_wordfeats_path = "../Datasets/conceptNet_embedding_hf_lisa_2.pkl"
+        cn_wordfeats_path = "../data_files/conceptNet_embedding_ViT.pkl"
         # out_path = "../data_files/concNetFilt_emb_Banana_lisa2" + pretok_label + ".pkl"
         out_path = "../data_files/concNet_nested_emb_ViT" + pretok_label + ".pkl"
 
