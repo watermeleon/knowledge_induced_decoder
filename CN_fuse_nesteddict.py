@@ -7,32 +7,42 @@ import pickle
 import torch
 import argparse
 import clip
+import ftfy
 
+# allrel = ['Antonym', 'AtLocation', 'CapableOf', 'Causes', 'CausesDesire', 'CreatedBy', 'DefinedAs', 'DerivedFrom', 'Desires', 'DistinctFrom', 'Entails', 'EtymologicallyDerivedFrom', 'EtymologicallyRelatedTo', 'FormOf', 'HasA', 'HasContext', 'HasFirstSubevent', 'HasLastSubevent', 'HasPrerequisite', 'HasProperty', 'HasSubevent', 'InstanceOf', 'IsA', 'LocatedNear', 'MadeOf', 'MannerOf', 'MotivatedByGoal', 'NotCapableOf', 'NotDesires', 'NotHasProperty', 'PartOf', 'ReceivesAction', 'RelatedTo', 'SimilarTo', 'SymbolOf', 'Synonym', 'UsedFor', 'capital', 'field', 'genre', 'genus', 'influencedBy', 'knownFor', 'language', 'leader', 'occupation', 'product']
 
-allrel = ['Antonym', 'AtLocation', 'CapableOf', 'Causes', 'CausesDesire', 'CreatedBy', 'DefinedAs', 'DerivedFrom', 'Desires', 'DistinctFrom', 'Entails', 'EtymologicallyDerivedFrom', 'EtymologicallyRelatedTo', 'FormOf', 'HasA', 'HasContext', 'HasFirstSubevent', 'HasLastSubevent', 'HasPrerequisite', 'HasProperty', 'HasSubevent', 'InstanceOf', 'IsA', 'LocatedNear', 'MadeOf', 'MannerOf', 'MotivatedByGoal', 'NotCapableOf', 'NotDesires', 'NotHasProperty', 'PartOf', 'ReceivesAction', 'RelatedTo', 'SimilarTo', 'SymbolOf', 'Synonym', 'UsedFor', 'capital', 'field', 'genre', 'genus', 'influencedBy', 'knownFor', 'language', 'leader', 'occupation', 'product']
+allrel = ['<|Antonym|>', '<|AtLocation|>', '<|CapableOf|>', '<|Causes|>', '<|CausesDesire|>', '<|CreatedBy|>', '<|DefinedAs|>', '<|DerivedFrom|>', '<|Desires|>', '<|DistinctFrom|>', '<|Entails|>', '<|EtymologicallyDerivedFrom|>', '<|EtymologicallyRelatedTo|>', '<|FormOf|>', '<|HasA|>', '<|HasContext|>', '<|HasFirstSubevent|>', '<|HasLastSubevent|>', '<|HasPrerequisite|>', '<|HasProperty|>', '<|HasSubevent|>', '<|InstanceOf|>', '<|IsA|>', '<|LocatedNear|>', '<|MadeOf|>', '<|MannerOf|>', '<|MotivatedByGoal|>', '<|NotCapableOf|>', '<|NotDesires|>', '<|NotHasProperty|>', '<|PartOf|>', '<|ReceivesAction|>', '<|RelatedTo|>', '<|SimilarTo|>', '<|SymbolOf|>', '<|Synonym|>', '<|UsedFor|>', '<|capital|>', '<|field|>', '<|genre|>', '<|genus|>', '<|influencedBy|>', '<|knownFor|>', '<|language|>', '<|leader|>', '<|occupation|>', '<|product|>']
+allrel = [ftfy.fix_text(rel) for rel in allrel]
+print(allrel)
 
 def create_nested(clipmodel, pretok):
     print("started creating nested dict...")
     # load the nested dict
-    pth_clipemb = "../data_files/concNet_filtBanana_save.pkl"
+    pth_clipemb = "../data_files/conceptnet_filt_nest_labels.pkl"
     with open(pth_clipemb, 'rb') as f:
                 CN_dict = pickle.load(f)
+    print("hi")
 
     pretok_label = "_pretok" if pretok else ""
     if clipmodel == "huggingface":
-        tokenizerBW =  CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32")
         cn_wordfeats_path = "../Datasets/conceptNet_embedding_hf_lisa_2.pkl"
-        out_path = "../data_files/concNetFilt_emb_Banana_lisa2" + pretok_label + ".pkl"
+        # out_path = "../data_files/concNetFilt_emb_Banana_lisa2" + pretok_label + ".pkl"
+        out_path = "../data_files/concNet_nested_emb_ViT" + pretok_label + ".pkl"
 
     else: 
         cn_wordfeats_path = "../data_files/conceptNet_embedding_rn50x4.pkl"
         out_path = "../data_files/concNet_nested_emb_rn50x4" + pretok_label + ".pkl"
 
+    # use the same tokenizer for both github and HF clip
+    tokenizerBW =  CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32")
+    tokenizerBW.add_tokens(allrel, special_tokens=True)
+    
     # load the stored embeddings:
     with open(cn_wordfeats_path, 'rb') as f:
                 cn_wordfeats = pickle.load(f)
-    if clipmodel == "huggingface":
-        cn_wordfeats =  {str(k).encode('latin-1').decode('utf-8') : v for k,v in cn_wordfeats.items()}
+    # if clipmodel == "huggingface":
+    # cn_wordfeats =  {str(k).encode('latin-1').decode('utf-8') : v for k,v in cn_wordfeats.items()}
+    cn_wordfeats =  {ftfy.fix_text(k) : v for k,v in cn_wordfeats.items()}
 
     file_to_store = open(out_path, "wb")
 
@@ -49,12 +59,9 @@ def create_nested(clipmodel, pretok):
             rw_emb = cn_wordfeats[related_word]
             if pretok:
                 word1, word2 = relword_item[0], relword_item[1]
-                if clipmodel == "huggingface":
-                    tokword1 = tokenizerBW(word1, padding=True, return_tensors="pt").input_ids.squeeze()
-                    tokword2 = tokenizerBW(word2, padding=True, return_tensors="pt").input_ids.squeeze()
-                else:
-                    tokword1 = clip.tokenize(word1).squeeze().tolist()
-                    tokword2 = clip.tokenize(word2).squeeze().tolist()
+                # if clipmodel == "huggingface":
+                tokword1 = tokenizerBW(word1, padding=True, return_tensors="pt").input_ids.squeeze()
+                tokword2 = tokenizerBW(word2, padding=True, return_tensors="pt").input_ids.squeeze()
                 relword_item = [tokword1, tokword2, relword_item[-1]]
             rw_emb_list.append([relword_item, rw_emb])
             totemb += 1
