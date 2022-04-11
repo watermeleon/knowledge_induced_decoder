@@ -55,6 +55,8 @@ def create_nested(clipmodel, pretok):
             # l2r edge is 0, so need to invert the binary
             rw_idx = int(not(relword_item[-1]))
             related_word = relword_item[rw_idx]
+            if related_word not in cn_wordfeats:
+                print(keyword,"relword:", relword_item, related_word)
             assert related_word in cn_wordfeats, "related word not in wordfeats"
             rw_emb = cn_wordfeats[related_word]
             if pretok:
