@@ -67,14 +67,14 @@ class KnowledgeGraph(object):
         self.transformer_tokenizer = transform_tok
         if spec is not None:
             self.remlist = [spec["bos_tokenid"], spec["eos_tokenid"]]
-        if on_lisa:
-            cn_wordfeats_path = "../Datasets/conceptNet_embedding_hf_lisa.pkl"
-        else:
-            cn_wordfeats_path = "/media/leonardo/Floppy/conceptNet_embedding_hf.pkl"
-            self.img_feats = h5py.File("/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", 'r')
         
-        with open(cn_wordfeats_path, 'rb') as f:
-                    self.cn_wordfeats = pickle.load(f)
+        # if on_lisa:
+        #     cn_wordfeats_path = "../Datasets/conceptNet_embedding_hf_lisa.pkl"
+        # else:
+        #     cn_wordfeats_path = "/media/leonardo/Floppy/conceptNet_embedding_hf.pkl"
+        #     self.img_feats = h5py.File("/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", 'r')
+        # with open(cn_wordfeats_path, 'rb') as f:
+        #             self.cn_wordfeats = pickle.load(f)
 
         pth_clipemb = "../data_files/keyword_embedding.pkl"
         with open(pth_clipemb, 'rb') as f:
