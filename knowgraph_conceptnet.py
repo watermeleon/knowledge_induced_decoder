@@ -76,7 +76,7 @@ class KnowledgeGraph(object):
         # with open(cn_wordfeats_path, 'rb') as f:
         #             self.cn_wordfeats = pickle.load(f)
 
-        pth_clipemb = "../data_files/keyword_embedding.pkl"
+        pth_clipemb = "../data_files/keyword_embedding_"+str(enc_model)+".pkl"
         with open(pth_clipemb, 'rb') as f:
                     all_wordemb = pickle.load(f)
 
