@@ -27,11 +27,11 @@ def create_nested(clipmodel, pretok):
     if clipmodel == "huggingface":
         cn_wordfeats_path = "../data_files/conceptNet_embedding_ViT.pkl"
         # out_path = "../data_files/concNetFilt_emb_Banana_lisa2" + pretok_label + ".pkl"
-        out_path = "../data_files/concNet_nested_emb_ViT" + pretok_label + ".pkl"
+        out_path = "../data_files/CN_feats/concNet_nested_emb_ViT" + pretok_label + ".pkl"
 
     else: 
         cn_wordfeats_path = "../data_files/conceptNet_embedding_rn50x4.pkl"
-        out_path = "../data_files/concNet_nested_emb_rn50x4" + pretok_label + ".pkl"
+        out_path = "../data_files/CN_feats/concNet_nested_emb_rn50x4" + pretok_label + ".pkl"
 
     # use the same tokenizer for both github and HF clip
     tokenizerBW =  CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32")
