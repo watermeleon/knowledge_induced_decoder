@@ -28,20 +28,26 @@ class KnowledgeGraph(object):
     spo_files - list of Path of *.spo files, or default kg name. e.g., ['HowNet']
     """
 
-    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None, on_lisa=True, edge_select="random", spec=None, kw_size = 5, rw_size = 5):
+    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None, on_lisa=True, edge_select="random", spec=None, kw_size = 5, rw_size = 5, enc_model = "ViT"):
         self.predicate = predicate
         self.kw_size = kw_size
         self.rw_size = rw_size
             
         print("using edge select type:", edge_select)
 
-        if edge_select == "random":
-            graph_path= '../data_files/conceptnet_filt_nest.pkl'
-        elif edge_select == "clipemb":
-            graph_path= '../data_files/concNetFilt_emb_Banana_lisa2_save.pkl'
-        elif edge_select == "clipemb_pretok":
-            graph_path= '../data_files/concNetFilt_emb_Banana_lisa2_pretok2.pkl'
+        pretok = ""
+        if edge_select == "clipemb_pretok":
+            pretok = "_pretok"
             edge_select = "clipemb"
+        graph_path = '../data_files/CN_feats/concNet_nested_emb_'+ str(enc_model)+ pretok +'pkl'
+
+        # if edge_select == "random":
+        #     graph_path= '../data_files/conceptnet_filt_nest.pkl'
+        # if edge_select == "clipemb":
+        #     graph_path= '../data_files/concNetFilt_emb_Banana_lisa2_save.pkl'
+        # elif edge_select == "clipemb_pretok":
+        #     graph_path= '../data_files/concNetFilt_emb_Banana_lisa2_pretok2.pkl'
+        #     edge_select = "clipemb"
 
         with open(graph_path, 'rb') as f:
                         self.lookupdict = pickle.load(f)

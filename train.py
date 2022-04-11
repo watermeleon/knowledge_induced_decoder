@@ -60,6 +60,7 @@ if __name__ == '__main__':
     parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb','clipemb_pretok'])
     parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused'])
     parser.add_argument('--tokenizer', type=str, default="bert", choices=['bert', 'clip'])
+    parser.add_argument('--enc_model', type=str, default="ViT", choices=['ViT', 'rn50x4'])
 
     parser.add_argument('--d_att', type=int, default=128)
 
@@ -84,8 +85,8 @@ if __name__ == '__main__':
     if args.tokenizer == "bert":
         tokenizerBW = AutoTokenizer.from_pretrained("bert-base-uncased")
     elif args.tokenizer == "clip":
-        tokenizerBW =  CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32", bos_token = "[BOS]", eos_token = "[EOS]", pad_token = "[PAD]")
-        tokenizerBW_dec =  CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32", bos_token = "[BOS]", eos_token = "[EOS]", pad_token = "[PAD]")
+        tokenizerBW =  CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32")
+        tokenizerBW_dec =  CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
     else:
         print("ERROR: unrecogniezed transformer tokenizer:", args.tokenizer)
 
@@ -133,7 +134,7 @@ if __name__ == '__main__':
 
     onlisa = args.onlisa == "True"
     seg_token = args.seg_token == "True"
-    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords )
+    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model)
 
     if args.decoder == "kg_infused":
         decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph )
