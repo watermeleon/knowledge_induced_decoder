@@ -39,7 +39,7 @@ class KnowledgeGraph(object):
         if edge_select == "clipemb_pretok":
             pretok = "_pretok"
             edge_select = "clipemb"
-        graph_path = '../data_files/CN_feats/concNet_nested_emb_'+ str(enc_model)+ pretok +'pkl'
+        graph_path = '../data_files/CN_feats/concNet_nested_emb_'+ str(enc_model)+ pretok +'.pkl'
 
         # if edge_select == "random":
         #     graph_path= '../data_files/conceptnet_filt_nest.pkl'
