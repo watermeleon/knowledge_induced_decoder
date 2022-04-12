@@ -1,6 +1,8 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
+from torch.nn.parameter import Parameter
+
 import numpy as np
 
 from models.transformer.attention import MultiHeadAttention
@@ -66,6 +68,16 @@ class MeshedDecoder(Module):
         self.max_pref = 0
         self.seg_token = seg_token
         
+    
+    def load_partial_pt_tok(self, vocab_size, d_model, padd):
+        clip_pt = 
+        num_new_toks = vocab_size - len(clip_pt)
+        newtok_emb = Parameter(torch.rand(num_new_toks, d_model))
+        # TODO: how to use padding index
+        word_emb = torch.cat((clip_pt, newtok_emb), 0)
+
+        return word_emb
+
     def forward(self, input, encoder_output, mask_encoder, contextfeat):
         """
         input : caption , probably the part that is already generated, so increases each time

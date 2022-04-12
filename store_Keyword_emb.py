@@ -60,7 +60,7 @@ def main(clipmodel: str):
 
         if i%100 == 0:
             print(i)
-    pickle.dump({"caption": keywords, "clip_embedding":torch.tensor(np.array(embedding_list))}, file_to_store)
+    pickle.dump({"captions": keywords, "clip_embedding":torch.tensor(np.array(embedding_list))}, file_to_store)
 
 
 if __name__ == '__main__':
