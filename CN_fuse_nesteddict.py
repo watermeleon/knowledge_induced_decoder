@@ -61,8 +61,8 @@ def create_nested(clipmodel, pretok):
             rw_emb = cn_wordfeats[related_word]
             if pretok:
                 word1, word2 = relword_item[0], relword_item[1]
-                tokword1 = tokenizerBW(word1, padding=True, return_tensors="pt").input_ids.squeeze().tolist()
-                tokword2 = tokenizerBW(word2, padding=True, return_tensors="pt").input_ids.squeeze().tolist()
+                tokword1 = tokenizerBW(word1, padding=True, return_tensors="pt").input_ids.squeeze().tolist()[1:-1]
+                tokword2 = tokenizerBW(word2, padding=True, return_tensors="pt").input_ids.squeeze().tolist()[1:-1]
                 relword_item = [tokword1, tokword2, relword_item[-1]]
             rw_emb_list.append([relword_item, rw_emb])
             totemb += 1
