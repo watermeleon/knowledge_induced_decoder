@@ -85,8 +85,8 @@ if __name__ == '__main__':
     if args.tokenizer == "bert":
         tokenizerBW = AutoTokenizer.from_pretrained("bert-base-uncased")
     elif args.tokenizer == "clip":
-        tokenizerBW =  CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32")
-        tokenizerBW_dec =  CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
+        tokenizerBW =  CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32", pad_token = "[PAD]")
+        tokenizerBW_dec =  CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32", pad_token = "[PAD]")
     else:
         print("ERROR: unrecogniezed transformer tokenizer:", args.tokenizer)
 
