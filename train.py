@@ -101,7 +101,7 @@ if __name__ == '__main__':
     # initialize training specifications
     cls_tok = tokenizerBW.cls_token
     spec = {}
-    # do this because bert tokenizer doesn't sue bos, but cls, and sep i.s.o. eos.
+    # do this because bert tokenizer doesn't sue bos, but cls, and sep i.s.o. eos..
     sample_txt = tokenizerBW("leon").input_ids
     spec['eos_tokenid'] =  tokenizerBW.sep_token_id if cls_tok is not None else sample_txt[-1]
     spec['bos_tokenid'] =  tokenizerBW.cls_token_id if cls_tok is not None else sample_txt[0]

@@ -70,7 +70,7 @@ class MeshedDecoder(Module):
         
     
     def load_partial_pt_tok(self, vocab_size, d_model, padd):
-        clip_pt = 
+        clip_pt = 7
         num_new_toks = vocab_size - len(clip_pt)
         newtok_emb = Parameter(torch.rand(num_new_toks, d_model))
         # TODO: how to use padding index

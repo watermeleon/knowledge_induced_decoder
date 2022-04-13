@@ -29,7 +29,6 @@ def evaluate_metrics(model, dataloader, spec, transform_tok = None):
     gen = {}
     gts = {}
     print("now doing eval metrics")
-
     with tqdm(desc='Epoch %d - evaluation' % e, unit='it', total=len(dataloader), disable=spec['tdqm_disable']) as pbar:
         for it, (images, caps_gt) in enumerate(iter(dataloader)):
             caps_gt, context_feats = caps_gt[0], torch.stack(caps_gt[1])
@@ -37,33 +36,17 @@ def evaluate_metrics(model, dataloader, spec, transform_tok = None):
             images, context_feats = images.to(device), context_feats.to(device)
             with torch.no_grad():
                 out, _ = model.beam_search(images, context_feats, 20, spec['eos_tokenid'], 5, out_size=1)
-            # print(" \n GT caps:", caps_gt)
-            # out = [[word.it for word in sent if word !=0] for sent in out]
-            # print("out is:", out)
-            
-            # if using fast tokenizer, replace <|endoftext|> token id with the [EOS] tokenid
-            endtexttokid = 49407
-            if endtexttokid in out:
-                out1 = torch.tensor([[tokenid if tokenid != endtexttokid else 49409 for tokenid in sent ] for sent in out])
-                out = out1
 
             caps_gen = [transform_tok.decode(sent) for sent in out] 
-            # print("caps mid", caps_gen1)
-            caps_gen = [sent.split("[EOS]")[0] for sent in caps_gen]
+            caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen]
 
-            # caps_gen = [sent.replace("[BOS]","") for sent in caps_gen]
-
-            # print("caps_gen is now:", caps_gen)
-            # print("\n \n")
             for i, (gts_i, gen_i) in enumerate(zip(caps_gt, caps_gen)):
-                # gen_i = ' '.join([k for k, g in itertools.groupby(gen_i)])
                 gen['%d_%d' % (it, i)] = [gen_i, ]
                 gts['%d_%d' % (it, i)] = gts_i
             pbar.update()
 
     gts = evaluation.PTBTokenizer.tokenize(gts)
     gen = evaluation.PTBTokenizer.tokenize(gen)
-    # print("after toks:", gen, gts)
     scores, _ = evaluation.compute_scores(gts, gen)
     return scores
 
