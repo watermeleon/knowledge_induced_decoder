@@ -64,7 +64,7 @@ if __name__ == '__main__':
     parser.add_argument('--enc_model', type=str, default="ViT", choices=['ViT', 'rn50x4'])
     parser.add_argument('--pt_token_emb', action='store_true')
 
-    parser.add_argument('--d_att', type=int, default=128)
+    parser.add_argument('--d_att', type=int, default=64)
 
     parser.add_argument('--num_keywords', type=int, default=4)
     parser.add_argument('--num_relatedwords', type=int, default=4)
