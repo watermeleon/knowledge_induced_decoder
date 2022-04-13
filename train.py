@@ -32,9 +32,10 @@ import pstats
 import ftfy
 
 # import training_functions 
-random.seed(1234)
-torch.manual_seed(1234)
-np.random.seed(1234)
+seed_num = 1234
+random.seed(seed_num)
+torch.manual_seed(seed_num)
+np.random.seed(seed_num)
 
 
 exec(open("training_functions.py").read())
@@ -61,11 +62,12 @@ if __name__ == '__main__':
     parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused'])
     parser.add_argument('--tokenizer', type=str, default="bert", choices=['bert', 'clip'])
     parser.add_argument('--enc_model', type=str, default="ViT", choices=['ViT', 'rn50x4'])
+    parser.add_argument('--pt_token_emb', action='store_true')
 
     parser.add_argument('--d_att', type=int, default=128)
 
-    parser.add_argument('--num_keywords', type=int, default=5)
-    parser.add_argument('--num_relatedwords', type=int, default=5)
+    parser.add_argument('--num_keywords', type=int, default=4)
+    parser.add_argument('--num_relatedwords', type=int, default=4)
 
 
     parser.add_argument('--annotation_folder', type=str)
@@ -102,10 +104,12 @@ if __name__ == '__main__':
     cls_tok = tokenizerBW.cls_token
     spec = {}
     # do this because bert tokenizer doesn't sue bos, but cls, and sep i.s.o. eos..
-    sample_txt = tokenizerBW("leon").input_ids
+    sample_txt = tokenizerBW("[PAD]").input_ids
     spec['eos_tokenid'] =  tokenizerBW.sep_token_id if cls_tok is not None else sample_txt[-1]
     spec['bos_tokenid'] =  tokenizerBW.cls_token_id if cls_tok is not None else sample_txt[0]
-    spec['pad_tokenid'] = tokenizerBW.pad_token_id
+    # spec['pad_tokenid'] = tokenizerBW.pad_token_id
+    spec['pad_tokenid'] = sample_txt[1]
+
     spec['tdqm_disable'] = False
     spec["device"] = device
     print("Selected specifications:", spec)
@@ -137,9 +141,9 @@ if __name__ == '__main__':
     knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model)
 
     if args.decoder == "kg_infused":
-        decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph )
+        decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)
     elif args.decoder == "vanilla":
-        decoder = VanillaDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att)
+        decoder = VanillaDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, enc_model = args.enc_model)
 
     model = Transformer(spec['bos_tokenid'], encoder, decoder).to(device)
 

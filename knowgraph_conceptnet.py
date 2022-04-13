@@ -65,6 +65,7 @@ class KnowledgeGraph(object):
         self.model_clip = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(self.device)
         self.clip_tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
         self.transformer_tokenizer = transform_tok
+        self.spec = spec
         if spec is not None:
             self.remlist = [spec["bos_tokenid"], spec["eos_tokenid"]]
         
@@ -303,7 +304,7 @@ class KnowledgeGraph(object):
             src_length = len(know_sent)
             sent_sizes.append(src_length)
             if len(know_sent) < max_length:
-                PAD_TOKEN = 0
+                PAD_TOKEN = self.spec["pad_tokenid"]
                 pad_num = max_length - src_length
                 know_sent += [PAD_TOKEN] * pad_num
                 seg += [1] * pad_num

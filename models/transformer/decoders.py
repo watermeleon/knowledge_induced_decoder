@@ -10,7 +10,7 @@ from models.transformer.utils import sinusoid_encoding_table, PositionWiseFeedFo
 from models.containers import Module, ModuleList
 # from ... import knowgraph_conceptnet 
 from knowgraph_conceptnet import KnowledgeGraph
-
+import clip
 class MeshedDecoderLayer(Module):
     def __init__(self, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1, self_att_module=None,
                  enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None):
@@ -46,13 +46,32 @@ class MeshedDecoderLayer(Module):
         ff = ff.clamp(min=1e-4)
         return ff
 
+class embedding_table():
+    def __init__(self, vocab_size, d_model, padding_idx, enc_model, device):
+        self.padding_idx = padding_idx
+        if enc_model == "ViT":
+            clipmodel,_ = clip.load("ViT-B/32", device=device)
+        else:
+            clipmodel ,_= clip.load("RN50x4", device=device)
+        self.w_freeze = clipmodel.token_embedding.weight.clone().detach()
+        num_new_toks = vocab_size - clipmodel.vocab_size
+        self.w_learn = Parameter(torch.normal(mean=0.0, std=1.0,size=(num_new_toks, d_model))).to(device)
+        self.weights = torch.cat((self.w_freeze, self.w_learn), 0)
+
+    def __call__(self, inp):
+        return F.embedding(inp, self.weights, padding_idx = self.padding_idx)
+
 
 class MeshedDecoder(Module):
     def __init__(self, vocab_size, max_len, N_dec, padding_idx, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1,
-                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None, transform_tok =None, device = None, on_lisa=True, edge_select="random", spec = None, seg_token=False,KG = None):
+                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False):
         super(MeshedDecoder, self).__init__()
         self.d_model = d_model
-        self.word_emb = nn.Embedding(vocab_size, d_model, padding_idx=padding_idx)
+        if pt_tokemb:
+            print("using pretrained token embeddings")
+            self.word_emb = embedding_table(vocab_size, d_model, padding_idx, enc_model, spec["device"])
+        else:
+            self.word_emb = nn.Embedding(vocab_size, d_model, padding_idx=padding_idx)
         self.pos_emb = nn.Embedding.from_pretrained(sinusoid_encoding_table(max_len + 1, d_model, 0), freeze=True)
         self.layers = ModuleList(
             [MeshedDecoderLayer(d_model, d_k, d_v, h, d_ff, dropout, self_att_module=self_att_module,
@@ -69,14 +88,6 @@ class MeshedDecoder(Module):
         self.seg_token = seg_token
         
     
-    def load_partial_pt_tok(self, vocab_size, d_model, padd):
-        clip_pt = 7
-        num_new_toks = vocab_size - len(clip_pt)
-        newtok_emb = Parameter(torch.rand(num_new_toks, d_model))
-        # TODO: how to use padding index
-        word_emb = torch.cat((clip_pt, newtok_emb), 0)
-
-        return word_emb
 
     def forward(self, input, encoder_output, mask_encoder, contextfeat):
         """
@@ -190,7 +201,6 @@ class VanillaDecoder(Module):
         self.max_len = max_len
         self.padding_idx = padding_idx
         self.N = N_dec
-        # self.KG = KnowledgeGraph(transform_tok = transform_tok, device = device, on_lisa = on_lisa, edge_select=edge_select)
         self.register_state('running_mask_self_attention', torch.zeros((1, 1, 0)).byte())
         self.register_state('running_seq', torch.zeros((1,)).long())
 
