@@ -30,7 +30,8 @@ def evaluate_metrics(model, dataloader, spec, transform_tok = None):
     print("now doing eval metrics")
     with tqdm(desc='Epoch %d - evaluation' % e, unit='it', total=len(dataloader), disable=spec['tdqm_disable']) as pbar:
         for it, (images, caps_gt) in enumerate(iter(dataloader)):
-
+            caps_gt, context_feats = caps_gt[0], torch.stack(caps_gt[1])
+            context_feats = context_feats[:,0,:,:]
             images, context_feats = images.to(device), context_feats.to(device)
             with torch.no_grad():
                 out, _ = model.beam_search(images, context_feats, 40, spec['eos_tokenid'], 5, out_size=1)
