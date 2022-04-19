@@ -64,6 +64,7 @@ if __name__ == '__main__':
     parser.add_argument('--enc_model', type=str, default="ViT", choices=['ViT', 'rn50x4'])
     parser.add_argument('--pt_token_emb', action='store_true')
     parser.add_argument('--start_rl', action='store_true')
+    parser.add_argument('--only_kw', action='store_true')
 
     parser.add_argument('--d_att', type=int, default=64)
 
@@ -139,7 +140,7 @@ if __name__ == '__main__':
 
     onlisa = args.onlisa == "True"
     seg_token = args.seg_token == "True"
-    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model)
+    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw)
 
     if args.decoder == "kg_infused":
         decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)

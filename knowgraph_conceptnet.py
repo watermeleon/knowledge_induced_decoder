@@ -28,7 +28,8 @@ class KnowledgeGraph(object):
     spo_files - list of Path of *.spo files, or default kg name. e.g., ['HowNet']
     """
 
-    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None, on_lisa=True, edge_select="random", spec=None, kw_size = 5, rw_size = 5, enc_model = "ViT"):
+    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None, on_lisa=True, edge_select="random", spec=None, kw_size = 5, rw_size = 5, enc_model = "ViT", only_kw = False):
+        self.only_kw = only_kw
         self.predicate = predicate
         self.kw_size = kw_size
         self.rw_size = rw_size
@@ -221,12 +222,13 @@ class KnowledgeGraph(object):
             # split_sent_vanilla = self.tokenizer(split_sent_vanilla1)
             for token_it, token in enumerate(split_sent):    
                 unigram = split_sent_vanilla[token_it]
-                entities = []
-                if str(unigram) not in self.special_tags:
-                    entities_words = self.get_ranked_edges(unigram, max_edges = max_edges, image_emb = image_emb[sent_it])
                 entities,  order_rel = [], []
-                if len(entities_words) != 0:
-                    entities , order_rel = self.entities_tokenized_pretok(entities_words)
+                if not self.only_kw:
+                    if str(unigram) not in self.special_tags:
+                        entities_words = self.get_ranked_edges(unigram, max_edges = max_edges, image_emb = image_emb[sent_it])
+                    entities,  order_rel = [], []
+                    if len(entities_words) != 0:
+                        entities , order_rel = self.entities_tokenized_pretok(entities_words)
 
                 sent_tree.append((token, entities))
                 if str(token) in self.special_tags:
