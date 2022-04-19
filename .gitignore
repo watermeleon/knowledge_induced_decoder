@@ -13,3 +13,5 @@ tensorboard_logs/
 annotations/
 *.gz
 /evaluation/meteor/data/
+
+saved_models/

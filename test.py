@@ -38,7 +38,8 @@ def predict_captions(model, dataloader, spec, transform_tok):
 
             caps_gen = [transform_tok.decode(sent) for sent in out] 
             caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen]
-
+            print("capsgen:", caps_gen)
+            print("caps GT:", caps_gt, "\n")
             for i, (gts_i, gen_i) in enumerate(zip(caps_gt, caps_gen)):
                 gen['%d_%d' % (it, i)] = [gen_i.strip(), ]
                 gts['%d_%d' % (it, i)] = gts_i
@@ -76,7 +77,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_relatedwords', type=int, default=5)
     parser.add_argument('--feat_size', type=int, default=2048)
     parser.add_argument('--resume', type=str, default="best", choices=['best', 'last'])
-    parser.add_argument('--d_att', type=int, default=128)
+    parser.add_argument('--d_att', type=int, default=64)
 
     args = parser.parse_args()
 
@@ -116,7 +117,7 @@ if __name__ == '__main__':
 
 
     # Pipeline for image regions
-    image_field = ImageDetectionsField(detections_path=args.features_path, max_detections=50, load_in_tmp=False)
+    image_field = ImageDetectionsField(detections_path=args.features_path, max_detections=50, load_in_tmp=False,print_img_name=True)
     # get the 1d clip emb features
     clipemb_field = ClipEmbDetectionsField(detections_path=args.contextfeat_path, load_in_tmp=False)
     # Pipeline for text
@@ -174,7 +175,7 @@ if os.path.exists(fname):
         data['epoch'], data['val_loss'], data['best_cider']))
 
     dict_dataset_test = test_dataset.image_dictionary({'image': image_field, 'text': RawField(), "img_id": clipemb_field})
-    dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size, num_workers=args.workers)
+    dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size, num_workers=args.workers,shuffle=True)
 
     scores = predict_captions(model, dict_dataloader_test, spec, tokenizerBW_dec)
     print(scores)
