@@ -1,4 +1,3 @@
-
 def evaluate_loss(model, dataloader, loss_fn, spec, vocab_size):
     # Validation loss
     model.eval()
@@ -31,11 +30,10 @@ def evaluate_metrics(model, dataloader, spec, transform_tok = None):
     print("now doing eval metrics")
     with tqdm(desc='Epoch %d - evaluation' % e, unit='it', total=len(dataloader), disable=spec['tdqm_disable']) as pbar:
         for it, (images, caps_gt) in enumerate(iter(dataloader)):
-            caps_gt, context_feats = caps_gt[0], torch.stack(caps_gt[1])
-            context_feats = context_feats[:,0,:,:]
+
             images, context_feats = images.to(device), context_feats.to(device)
             with torch.no_grad():
-                out, _ = model.beam_search(images, context_feats, 20, spec['eos_tokenid'], 5, out_size=1)
+                out, _ = model.beam_search(images, context_feats, 40, spec['eos_tokenid'], 5, out_size=1)
 
             caps_gen = [transform_tok.decode(sent) for sent in out] 
             caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen]
@@ -88,26 +86,31 @@ def train_xe(model, dataloader, optim, spec, vocab_size):
     return loss
 
 
-def train_scst(model, dataloader, optim, cider, text_field):
+def train_scst(model, dataloader, optim, cider, spec, transform_tok):
+
     # Training with self-critical
     tokenizer_pool = multiprocessing.Pool()
     running_reward = .0
     running_reward_baseline = .0
     model.train()
     running_loss = .0
-    seq_len = 20
+    seq_len = 40
     beam_size = 5
     print("trainin SCTS")
-    with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=True) as pbar:
-        for it, (detections, caps_gt, cocoid) in enumerate(dataloader):
-            detections = detections.to(device)
-            outs, log_probs = model.beam_search(detections, seq_len, eos_tokenid,
+    with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=False) as pbar:
+        for it, (detections, caps_gt) in enumerate(dataloader):
+            caps_gt, context_feats = caps_gt[0], torch.stack(caps_gt[1])
+            context_feats = context_feats[:,0,:,:]
+            detections, context_feats = detections.to(device) , context_feats.to(device)
+            outs, log_probs = model.beam_search(detections, context_feats, seq_len, spec["eos_tokenid"],
                                                 beam_size, out_size=beam_size)
             optim.zero_grad()
 
             # Rewards
-            caps_gen = text_field.decode(outs.view(-1, seq_len))
             caps_gt = list(itertools.chain(*([c, ] * beam_size for c in caps_gt)))
+            # caps_gen = text_field.decode(outs.view(-1, seq_len))
+            caps_gen = [transform_tok.decode(sent) for sent in outs.view(-1, seq_len)] 
+            caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen] 
             caps_gen, caps_gt = tokenizer_pool.map(evaluation.PTBTokenizer.tokenize, [caps_gen, caps_gt])
             reward = cider.compute_score(caps_gt, caps_gen)[1].astype(np.float32)
             reward = torch.from_numpy(reward).to(device).view(detections.shape[0], beam_size)
