@@ -63,6 +63,7 @@ if __name__ == '__main__':
     parser.add_argument('--tokenizer', type=str, default="bert", choices=['bert', 'clip'])
     parser.add_argument('--enc_model', type=str, default="ViT", choices=['ViT', 'rn50x4'])
     parser.add_argument('--pt_token_emb', action='store_true')
+    parser.add_argument('--start_rl', action='store_true')
 
     parser.add_argument('--d_att', type=int, default=64)
 
@@ -192,7 +193,8 @@ if __name__ == '__main__':
             print('Resuming from epoch %d, validation loss %f, and best cider %f' % (
                 data['epoch'], data['val_loss'], data['best_cider']))
 
-    use_rl = True
+    if args.start_rl:
+        use_rl = True
 
     ########################################################################################################################################################################
     print("Training starts")
