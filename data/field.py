@@ -83,11 +83,11 @@ class RawField(object):
 
 class ImageDetectionsField(RawField):
     def __init__(self, preprocessing=None, postprocessing=None, detections_path=None, max_detections=100,
-                 sort_by_prob=False, load_in_tmp=True):
+                 sort_by_prob=False, load_in_tmp=True,print_img_name = False):
         self.max_detections = max_detections
         self.detections_path = detections_path
         self.sort_by_prob = sort_by_prob
-
+        self.print_img_name = print_img_name
         tmp_detections_path = os.path.join('/tmp', os.path.basename(detections_path))
 
         if load_in_tmp:
@@ -105,7 +105,8 @@ class ImageDetectionsField(RawField):
         super(ImageDetectionsField, self).__init__(preprocessing, postprocessing)
 
     def preprocess(self, x, avoid_precomp=False):
-        # print("field img:", x)
+        if self.print_img_name:
+            print("field img:", x)
 
         image_id = int(x.split('_')[-1].split('.')[0])
         # print("id is here:", image_id, "path is:", self.detections_path)
