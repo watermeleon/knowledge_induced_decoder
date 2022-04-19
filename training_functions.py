@@ -97,7 +97,7 @@ def train_scst(model, dataloader, optim, cider, spec, transform_tok):
     seq_len = 40
     beam_size = 5
     print("trainin SCTS")
-    with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=False) as pbar:
+    with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=spec['tdqm_disable']) as pbar:
         for it, (detections, caps_gt) in enumerate(dataloader):
             caps_gt, context_feats = caps_gt[0], torch.stack(caps_gt[1])
             context_feats = context_feats[:,0,:,:]
@@ -111,6 +111,7 @@ def train_scst(model, dataloader, optim, cider, spec, transform_tok):
             # caps_gen = text_field.decode(outs.view(-1, seq_len))
             caps_gen = [transform_tok.decode(sent) for sent in outs.view(-1, seq_len)] 
             caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen] 
+            # this puts it in lists or something:
             caps_gen, caps_gt = tokenizer_pool.map(evaluation.PTBTokenizer.tokenize, [caps_gen, caps_gt])
             reward = cider.compute_score(caps_gt, caps_gen)[1].astype(np.float32)
             reward = torch.from_numpy(reward).to(device).view(detections.shape[0], beam_size)
