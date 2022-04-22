@@ -213,7 +213,7 @@ class KnowledgeGraph(object):
             sent_tree = []
             pos_idx_tree = []   # for the relative idx of related word
             abs_idx_tree = []
-            first_pos_idx = 20
+            first_pos_idx = 32
             pos_idx = first_pos_idx        # the position indx for the transformer
             abs_idx = -1        # the idx of a token in the list
             abs_idx_src = []    # stores the idx of the keywords    
