@@ -9,8 +9,10 @@ from models.transformer.attention import MultiHeadAttention
 from models.transformer.utils import sinusoid_encoding_table, PositionWiseFeedForward
 from models.containers import Module, ModuleList
 # from ... import knowgraph_conceptnet 
-from knowgraph_conceptnet import KnowledgeGraph
+# from knowgraph_conceptnet import KnowledgeGraph
 import clip
+
+
 class MeshedDecoderLayer(Module):
     def __init__(self, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1, self_att_module=None,
                  enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None):
@@ -67,6 +69,7 @@ class MeshedDecoder(Module):
                  self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False):
         super(MeshedDecoder, self).__init__()
         self.d_model = d_model
+        self.num_kw= 4
         if pt_tokemb:
             print("using pretrained token embeddings")
             self.word_emb = embedding_table(vocab_size, d_model, padding_idx, enc_model, spec["device"])
@@ -123,7 +126,7 @@ class MeshedDecoder(Module):
 
         mask_self_attention_copy = mask_self_attention.clone()
 
-        seq = torch.arange(max_pref, seq_len + max_pref).view(1, -1).expand(b_s, -1).to(input.device)  # (b_s, seq_len)
+        seq = torch.arange(self.num_kw +1 , seq_len + self.num_kw+1).view(1, -1).expand(b_s, -1).to(input.device)  # (b_s, seq_len)
         seq = seq.masked_fill(mask_queries.squeeze(-1) == 0, 0)
 
         if self._is_stateful:
@@ -177,7 +180,7 @@ class MeshedDecoder(Module):
 
 
         
-        if self.stateful_1 <2:
+        if self.stateful_1 < 2:
             out = out[:,-seq_len:,:]
 
         out = self.fc(out)

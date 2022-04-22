@@ -211,11 +211,12 @@ class KnowledgeGraph(object):
         for sent_it, split_sent in enumerate(split_sent_batch):
             # create tree
             sent_tree = []
-            pos_idx_tree = []
+            pos_idx_tree = []   # for the relative idx of related word
             abs_idx_tree = []
-            pos_idx = 0
-            abs_idx = -1
-            abs_idx_src = []
+            first_pos_idx = 20
+            pos_idx = first_pos_idx        # the position indx for the transformer
+            abs_idx = -1        # the idx of a token in the list
+            abs_idx_src = []    # stores the idx of the keywords    
             num_toks = 0
 
             split_sent_vanilla = sent_batch[sent_it]
@@ -251,6 +252,8 @@ class KnowledgeGraph(object):
                         ent_pos_idx = [token_pos_idx[-1] + i for i in range(1, len(ent)+1)]
                     else:
                         ent_pos_idx = [token_pos_idx[-1] - i for i in range(1, len(ent)+1)]
+                        ent_pos_idx.reverse()
+
                     entities_pos_idx.append(ent_pos_idx)
                     ent_abs_idx = [abs_idx + i for i in range(1, len(ent)+1)]
                     abs_idx = ent_abs_idx[-1]
@@ -299,9 +302,10 @@ class KnowledgeGraph(object):
                         visible_matrix[id, visible_abs_idx] = 1
             
             # ensure no soft pos index is lower than 0,increase so lowest is 0
-            diff_pos = min(1,min(pos))
-            if diff_pos!=0:
-                pos = [item-diff_pos for item in pos]
+            # ToDo: shouldn't the 1 be a 0 ? below
+            # diff_pos = min(1,min(pos))
+            # if diff_pos!=0:
+            #     pos = [item-diff_pos for item in pos]
 
             src_length = len(know_sent)
             sent_sizes.append(src_length)
