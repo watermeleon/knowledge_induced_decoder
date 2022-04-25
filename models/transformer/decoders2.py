@@ -12,13 +12,20 @@ from models.containers import Module, ModuleList
 import clip
 
 class PromptDecoderLayer(Module):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1, self_att_module=None,
+                 enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None):
         super(PromptDecoderLayer, self).__init__()
 
-        self.sent_msca = MSCA(*args, **kwargs)
-        self.ksb_msca = MSCA(*args, **kwargs)
+        self.sent_msca = MSCA(d_model, d_k, d_v, h, d_ff, dropout, self_att_module,
+                 enc_att_module, self_att_module_kwargs, enc_att_module_kwargs)
+        self.ksb_msca = MSCA(d_model, d_k, d_v, h, d_ff, dropout, self_att_module,
+                 enc_att_module, self_att_module_kwargs, enc_att_module_kwargs)
 
-    def forward(self, know_sent_batch, input_sent, enc_output, mask_pad, ksb_pad_mask,  mask_self_att_sent, mask_self_att_ksb , mask_enc_att, seg_batch, pad_kw_tensor, kw_lengths):
+        self.register_state('running_kw_sent', torch.zeros((0, d_model)))
+        self.register_state('running_ksb_outp', torch.zeros((0, d_model)))
+
+
+    def forward(self, know_sent_batch, input_sent, enc_output, mask_pad, ksb_pad_mask,  mask_self_att_sent, mask_self_att_ksb , mask_enc_att, seg_batch, pad_kw_tensor, kw_lengths, statefull_num):
         """
         input : position emb + already gen caption (probably)
         enc_output : tensor of output of all the encoders
@@ -30,31 +37,26 @@ class PromptDecoderLayer(Module):
         mask_self_att_prompt = the visibility matrix
         """
         # If is statefull, don't have: seg_batch, mask_self_att_ksb
-        if self._is_stateful:
-            kw_sent = input_sent
+        if self._is_stateful and statefull_num >1:
+            kw_sent =  torch.cat([self.running_kw_sent, input_sent], 1) 
+            self.running_kw_sent = kw_sent
+            ksb_outp = self.running_ksb_outp 
         else:
-            # keywords= know_sent_batch[seg_batch]   # check if seqbatch slicing works like this
-            max_kw = max([sum(map(int, segbatch_i)) for segbatch_i in seg_batch])
-            # print("max kw len is:", max_kw)
-
-
             newlist = []
             for i in range(len(seg_batch)):
                 kws = know_sent_batch[i][seg_batch[i]] 
                 newlist.append(kws)
-                # intlist = map(int, seg_batch[i])
-                # print("total true:", sum(intlist))
                 pad_kw_tensor[i,:kw_lengths[i]] = kws
 
             keywords = pad_kw_tensor
-            # keywords = torch.cat([know_sent_batch[i][seg_batch[i]] for i in range(len(seg_batch))], -1)
-
-
             kw_sent = torch.cat((keywords.clone(), input_sent) ,-2)
-        sent_outp = self.sent_msca(input_sent, kw_sent, enc_output, mask_pad, mask_self_att_sent, mask_enc_att)
-        # if is statefull: get these from memory
-        ksb_outp = self.ksb_msca(know_sent_batch, know_sent_batch, enc_output, ksb_pad_mask, mask_self_att_ksb, mask_enc_att)
 
+            ksb_outp = self.ksb_msca(know_sent_batch, know_sent_batch, enc_output, ksb_pad_mask, mask_self_att_ksb, mask_enc_att)
+            if statefull_num == 1:
+                self.running_kw_sent = kw_sent
+                self.running_ksb_outp = ksb_outp
+
+        sent_outp = self.sent_msca(input_sent, kw_sent, enc_output, mask_pad, mask_self_att_sent, mask_enc_att)    
         return ksb_outp, sent_outp
 
 class MSCA(Module):
@@ -176,10 +178,15 @@ class PromptDecoder(Module):
         posemb = self.pos_emb(seq)
         sent_out =  wordemb + posemb 
 
-        ksb_out = self.word_emb(know_sent_batch) + self.pos_emb(position_batch)
+        
+        if self.stateful_1 < 2:
+            ksb_out = self.word_emb(know_sent_batch) + self.pos_emb(position_batch)
+            if self.seg_token == True:
+                ksb_out += 1
+        else:
+            ksb_out = None
+            ksb_pad_mask = None
 
-        if self.seg_token == True and self.stateful_1 < 2:
-            ksb_out += 1
 
 
         # because keywords prompt can have variable size length due to tokenization, create mask so that kw tensor is of same size.
@@ -201,7 +208,7 @@ class PromptDecoder(Module):
         visible_matrix_batch = visible_matrix_batch.unsqueeze(1)
         
         for i, l in enumerate(self.layers):                    
-            ksb_out, sent_out = l(ksb_out, sent_out, encoder_output, mask_queries, ksb_pad_mask, mask_self_att_sent, visible_matrix_batch, mask_encoder, seg_batch, pad_kw_tensor, kw_lengths)
+            ksb_out, sent_out = l(ksb_out, sent_out, encoder_output, mask_queries, ksb_pad_mask, mask_self_att_sent, visible_matrix_batch, mask_encoder, seg_batch, pad_kw_tensor, kw_lengths, self.stateful_1)
 
         out = self.fc(sent_out)
 
