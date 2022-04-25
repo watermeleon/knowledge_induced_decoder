@@ -192,7 +192,7 @@ class PromptDecoder(Module):
                 mask_kw[j][i] = 1
 
         sent_kw_mask = mask_kw.unsqueeze(1).repeat(1,seq_len,1).unsqueeze(1) # from shape (bs,kw) -> (bs, 1, seqlen, kw)
-        mask_self_att_sent = torch.cat((sent_kw_mask, mask_self_attention), -1)
+        mask_self_att_sent = torch.cat((sent_kw_mask, mask_self_attention), -1).gt(0)
 
         # compute the kw tensor
         pad_emb = self.word_emb(torch.tensor([self.padding_idx], device=input.device))
