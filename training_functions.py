@@ -60,20 +60,20 @@ def train_xe(model, dataloader, optim, spec, vocab_size):
     # profile.enable()
     with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=spec['tdqm_disable']) as pbar:
         for it, (detections, captions, context_feats) in enumerate(dataloader):
-            if it < 1301:
-                continue
-            detections, captions, context_feats = detections.to(device), captions.to(device), context_feats.to(device)
-            out = model(detections, captions, context_feats)
-            optim.zero_grad()
-            captions_gt = captions[:, 1:].contiguous()
+            if it >= 1301:
+            
+                detections, captions, context_feats = detections.to(device), captions.to(device), context_feats.to(device)
+                out = model(detections, captions, context_feats)
+                optim.zero_grad()
+                captions_gt = captions[:, 1:].contiguous()
 
-            out = out[:, :-1].contiguous()
-            loss = loss_fn(out.view(-1, vocab_size), captions_gt.view(-1))
-            loss.backward()
+                out = out[:, :-1].contiguous()
+                loss = loss_fn(out.view(-1, vocab_size), captions_gt.view(-1))
+                loss.backward()
 
-            optim.step()
-            this_loss = loss.item()
-            running_loss += this_loss
+                optim.step()
+                this_loss = loss.item()
+                running_loss += this_loss
 
             pbar.set_postfix(loss=running_loss / (it + 1))
             pbar.update()
