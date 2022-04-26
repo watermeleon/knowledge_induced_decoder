@@ -38,8 +38,7 @@ class PromptDecoderLayer(Module):
         """
         # If is statefull, don't have: seg_batch, mask_self_att_ksb
         if self._is_stateful and statefull_num >1:
-            kw_sent =  torch.cat([self.running_kw_sent, input_sent], 1) 
-            self.running_kw_sent = kw_sent
+            kw_sent = input_sent
             ksb_outp = self.running_ksb_outp 
         else:
             newlist = []
@@ -53,7 +52,6 @@ class PromptDecoderLayer(Module):
 
             ksb_outp = self.ksb_msca(know_sent_batch, know_sent_batch, enc_output, ksb_pad_mask, mask_self_att_ksb, mask_enc_att)
             if statefull_num == 1:
-                self.running_kw_sent = kw_sent
                 self.running_ksb_outp = ksb_outp
 
         sent_outp = self.sent_msca(input_sent, kw_sent, enc_output, mask_pad, mask_self_att_sent, mask_enc_att)    
@@ -134,6 +132,9 @@ class PromptDecoder(Module):
         # get the KG matrices
         max_pref = 0
         self.stateful_1 = self.running_seq[0][0] if self.running_seq.size(0) >1 else 0
+        # bs , seq_len = input.size()
+        b_s, seq_len = input.shape[:2]
+
         if self.stateful_1 == 0:
             with torch.no_grad():
                 know_sent_batch, position_batch, visible_matrix_batch, seg_batch = self.KG.get_vm_from_imgid(contextfeat)
@@ -146,10 +147,20 @@ class PromptDecoder(Module):
             max_pref = know_sent_batch.size(1)           
             self.max_pref = max_pref
 
-        bs , seq_len = input.size()
-        tot_seq = max_pref + seq_len
+            # because keywords prompt can have variable size length due to tokenization, create mask so that kw tensor is of same size.
+            seg_batch_neg = ~seg_batch
+            kw_lengths = np.array([sum(map(int, segbatch_i)) for segbatch_i in seg_batch_neg])
+            max_kw = max(kw_lengths)
+            mask_kw = torch.zeros((b_s, max_kw),device=input.device)
+            kw_len_dif = kw_lengths - max_kw 
+            for j, kw_len in enumerate(kw_len_dif):
+                for i in range(kw_len, 0):
+                    mask_kw[j][i] = 1
+            sent_kw_mask = mask_kw.unsqueeze(1).repeat(1,seq_len,1).unsqueeze(1) # from shape (bs,kw) -> (bs, 1, seqlen, kw)
 
-        b_s, seq_len = input.shape[:2]
+
+
+
         mask_queries = (input != self.padding_idx).unsqueeze(-1).float()  # (b_s, seq_len, 1)
          
         mask_self_attention = torch.triu(torch.ones((seq_len, seq_len), dtype=torch.uint8, device=input.device), diagonal=1)
@@ -163,16 +174,16 @@ class PromptDecoder(Module):
 
         if self._is_stateful:
             self.running_mask_self_attention = torch.cat([self.running_mask_self_attention, mask_self_attention], -1)
-            mask_self_attention = self.running_mask_self_attention
+            mask_self_att_sent = self.running_mask_self_attention
             self.running_seq.add_(1)
             seq = self.running_seq + self.max_pref
             if self.stateful_1 == 1:
-                self.running_mask_self_attention = torch.cat([seg_batch.unsqueeze(1).unsqueeze(1), mask_self_attention_copy], -1)
+                self.running_mask_self_attention = torch.cat((sent_kw_mask, mask_self_att_sent), -1).gt(0)
 
         # if statefull and not first number skip this
         if  self.stateful_1 < 2:
-            # Need to invert seg_batch to easily find keywords
-            seg_batch = seg_batch == 0
+            mask_self_att_sent = torch.cat((sent_kw_mask, mask_self_attention_copy), -1).gt(0)
+            seg_batch = ~ seg_batch    # Invert seg_batch to find keywords
 
         wordemb = self.word_emb(input)
         posemb = self.pos_emb(seq)
@@ -183,29 +194,18 @@ class PromptDecoder(Module):
             ksb_out = self.word_emb(know_sent_batch) + self.pos_emb(position_batch)
             if self.seg_token == True:
                 ksb_out += 1
+
+            # compute the kw tensor
+            pad_emb = self.word_emb(torch.tensor([self.padding_idx], device=input.device))
+            pad_kw_tensor = pad_emb.clone().detach().repeat(b_s, max_kw, 1)
+            visible_matrix_batch = visible_matrix_batch.unsqueeze(1)
         else:
             ksb_out = None
             ksb_pad_mask = None
-
-
-
-        # because keywords prompt can have variable size length due to tokenization, create mask so that kw tensor is of same size.
-        kw_lengths = np.array([sum(map(int, segbatch_i)) for segbatch_i in seg_batch])
-        max_kw = max(kw_lengths)
-        mask_kw = torch.zeros((bs, max_kw),device=input.device)
-        kw_len_dif = kw_lengths - max_kw 
-        for j, kw_len in enumerate(kw_len_dif):
-            for i in range(kw_len, 0):
-                mask_kw[j][i] = 1
-
-        sent_kw_mask = mask_kw.unsqueeze(1).repeat(1,seq_len,1).unsqueeze(1) # from shape (bs,kw) -> (bs, 1, seqlen, kw)
-        mask_self_att_sent = torch.cat((sent_kw_mask, mask_self_attention), -1).gt(0)
-
-        # compute the kw tensor
-        pad_emb = self.word_emb(torch.tensor([self.padding_idx], device=input.device))
-        pad_kw_tensor = pad_emb.clone().detach().repeat(bs, max_kw, 1)
-
-        visible_matrix_batch = visible_matrix_batch.unsqueeze(1)
+            pad_kw_tensor = None
+            visible_matrix_batch = None
+            seg_batch = None
+            kw_lengths = None
         
         for i, l in enumerate(self.layers):                    
             ksb_out, sent_out = l(ksb_out, sent_out, encoder_output, mask_queries, ksb_pad_mask, mask_self_att_sent, visible_matrix_batch, mask_encoder, seg_batch, pad_kw_tensor, kw_lengths, self.stateful_1)
