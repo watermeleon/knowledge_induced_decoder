@@ -6,7 +6,7 @@ from data import ImageDetectionsField, TextField, RawField, ClipEmbDetectionsFie
 from data import COCO, DataLoader
 import evaluation
 # from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory
-from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder
+from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder, PromptDecoder
 from knowgraph_conceptnet import KnowledgeGraph
 from transformers import CLIPTokenizer, CLIPTokenizerFast, AutoTokenizer
 
@@ -54,6 +54,7 @@ def predict_captions(model, dataloader, spec, transform_tok):
 
 if __name__ == '__main__':
     device = torch.device('cuda')
+    # device = torch.device('cpu')
 
     parser = argparse.ArgumentParser(description='Meshed-Memory Transformer')
     parser.add_argument('--exp_name', type=str, default='m2_transformer')
@@ -106,11 +107,11 @@ if __name__ == '__main__':
     # initialize training specifications
     cls_tok = tokenizerBW.cls_token
     spec = {}
-    # do this because bert tokenizer doesn't sue bos, but cls, and sep i.s.o. eos.
-    sample_txt = tokenizerBW("leon").input_ids
+    # do this because bert tokenizer doesn't sue bos, but cls, and sep i.s.o. eos..
+    sample_txt = tokenizerBW("[PAD]").input_ids
     spec['eos_tokenid'] =  tokenizerBW.sep_token_id if cls_tok is not None else sample_txt[-1]
     spec['bos_tokenid'] =  tokenizerBW.cls_token_id if cls_tok is not None else sample_txt[0]
-    spec['pad_tokenid'] = tokenizerBW.pad_token_id
+    spec['pad_tokenid'] = sample_txt[1]
     spec['tdqm_disable'] = False
     spec["device"] = device
     print("Selected specifications:", spec)
@@ -143,7 +144,7 @@ if __name__ == '__main__':
     knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model)
 
     if args.decoder == "kg_infused":
-        decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph )
+        decoder = PromptDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph, enc_model= args.enc_model, spec=spec )
     elif args.decoder == "vanilla":
         decoder = VanillaDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att)
 

@@ -10,7 +10,7 @@ from data import ImageDetectionsField, TextField, RawField, ClipEmbDetectionsFie
 from data import COCO, DataLoader
 import evaluation
 from evaluation import PTBTokenizer, Cider
-from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder
+from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder, PromptDecoder
 from knowgraph_conceptnet import KnowledgeGraph
 
 import torch
@@ -109,9 +109,7 @@ if __name__ == '__main__':
     sample_txt = tokenizerBW("[PAD]").input_ids
     spec['eos_tokenid'] =  tokenizerBW.sep_token_id if cls_tok is not None else sample_txt[-1]
     spec['bos_tokenid'] =  tokenizerBW.cls_token_id if cls_tok is not None else sample_txt[0]
-    # spec['pad_tokenid'] = tokenizerBW.pad_token_id
     spec['pad_tokenid'] = sample_txt[1]
-
     spec['tdqm_disable'] = False
     spec["device"] = device
     print("Selected specifications:", spec)
@@ -143,7 +141,7 @@ if __name__ == '__main__':
     knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw)
 
     if args.decoder == "kg_infused":
-        decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)
+        decoder = PromptDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)
     elif args.decoder == "vanilla":
         decoder = VanillaDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, enc_model = args.enc_model)
 
