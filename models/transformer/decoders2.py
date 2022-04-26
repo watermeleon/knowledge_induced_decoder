@@ -98,7 +98,7 @@ class PromptDecoder(Module):
         super(PromptDecoder, self).__init__()
         self.d_model = d_model
         # self.pad_tokenid = spec["pad_tokenid"]
-        self.num_kw= 6
+
 
         if pt_tokemb:
             print("using pretrained token embeddings")
@@ -119,6 +119,10 @@ class PromptDecoder(Module):
         self.register_state('running_seq', torch.zeros((1,)).long())
         self.max_pref = 0
         self.seg_token = seg_token
+
+        
+        kw_tokens = 15
+        self.pos_start_sent =  kw_tokens + KG.first_pos_idx
         
     
 
@@ -169,7 +173,7 @@ class PromptDecoder(Module):
         mask_self_attention = mask_self_attention.gt(0)  # (b_s, 1, seq_len, seq_len)
         mask_self_attention_copy = mask_self_attention.clone()
 
-        seq = torch.arange(self.num_kw +1 , seq_len + self.num_kw+1, device = input.device).view(1, -1).expand(b_s, -1) # (b_s, seq_len)
+        seq = torch.arange(self.pos_start_sent , seq_len + self.pos_start_sent, device = input.device).view(1, -1).expand(b_s, -1) # (b_s, seq_len)
         seq = seq.masked_fill(mask_queries.squeeze(-1) == 0, 0)
 
         if self._is_stateful:

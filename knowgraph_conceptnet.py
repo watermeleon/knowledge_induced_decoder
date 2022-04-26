@@ -33,7 +33,8 @@ class KnowledgeGraph(object):
         self.predicate = predicate
         self.kw_size = kw_size
         self.rw_size = rw_size
-            
+        # max num related words is 5 + relationship label  = 6, but make 8 to binary reasons?
+        self.first_pos_idx = 8
         print("using edge select type:", edge_select)
 
         pretok = ""
@@ -43,7 +44,7 @@ class KnowledgeGraph(object):
         graph_path = '../data_files/CN_feats/concNet_nested_emb_'+ str(enc_model)+ pretok +'.pkl'
 
         # if edge_select == "random":
-        #     graph_path= '../data_files/conceptnet_filt_nest.pkl'
+        #     graph_path= '../data_files/conceptnet_filt_nest.pkl'8997326
         # if edge_select == "clipemb":
         #     graph_path= '../data_files/concNetFilt_emb_Banana_lisa2_save.pkl'
         # elif edge_select == "clipemb_pretok":
@@ -213,8 +214,8 @@ class KnowledgeGraph(object):
             sent_tree = []
             pos_idx_tree = []   # for the relative idx of related word
             abs_idx_tree = []
-            first_pos_idx = 32
-            pos_idx = first_pos_idx        # the position indx for the transformer
+            
+            pos_idx = self.first_pos_idx        # the position indx for the transformer
             abs_idx = -1        # the idx of a token in the list
             abs_idx_src = []    # stores the idx of the keywords    
             num_toks = 0
