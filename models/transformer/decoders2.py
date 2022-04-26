@@ -195,10 +195,10 @@ class PromptDecoder(Module):
                 wordemb_ksb = self.word_emb(know_sent_batch)
             except:
                 print("can't get wordembs for:", know_sent_batch)
-                
+            torch.set_printoptions(profile="full")
             print(" posemb, is :", position_batch)            
             posemb_ksb = self.pos_emb(position_batch)
-                
+            torch.set_printoptions(profile="default") # reset
             ksb_out = wordemb_ksb + posemb_ksb
             if self.seg_token == True:
                 ksb_out += 1
