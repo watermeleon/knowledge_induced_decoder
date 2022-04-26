@@ -15,7 +15,7 @@ allrel = ['<|Antonym|>', '<|AtLocation|>', '<|CapableOf|>', '<|Causes|>', '<|Cau
 allrel = [ftfy.fix_text(rel) for rel in allrel]
 print(allrel)
 
-def create_nested(clipmodel, pretok):
+def create_nested(clipmodel, pretok, tok_thresh):
     print("started creating nested dict...")
     # load the nested dict
     pth_clipemb = "../data_files/CN_feats/conceptnet_filt_nest_labels.pkl"
@@ -27,7 +27,7 @@ def create_nested(clipmodel, pretok):
     if clipmodel == "huggingface":
         cn_wordfeats_path = "../data_files/CN_feats/conceptNet_embedding_ViT.pkl"
         # out_path = "../data_files/concNetFilt_emb_Banana_lisa2" + pretok_label + ".pkl"
-        out_path = "../data_files/CN_feats/concNet_nested_emb_ViT" + pretok_label + ".pkl"
+        out_path = "../data_files/CN_feats/concNet_nested_emb_ViT" + pretok_label + "_maxtok.pkl"
 
     else: 
         cn_wordfeats_path = "../data_files/CN_feats/conceptNet_embedding_rn50x4.pkl"
@@ -63,6 +63,8 @@ def create_nested(clipmodel, pretok):
                 word1, word2 = relword_item[0], relword_item[1]
                 tokword1 = tokenizerBW(word1, padding=True, return_tensors="pt").input_ids.squeeze().tolist()[1:-1]
                 tokword2 = tokenizerBW(word2, padding=True, return_tensors="pt").input_ids.squeeze().tolist()[1:-1]
+                if len(tokword1) > tok_thresh or len(tokword2) > tok_thresh:
+                    continue
                 relword_item = [tokword1, tokword2, relword_item[-1]]
             rw_emb_list.append([relword_item, rw_emb])
             totemb += 1
@@ -79,7 +81,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--clipmodel', default="clip_github", choices=('clip_github','huggingface'))
     parser.add_argument('--pretok', action='store_true')
+    parser.add_argument('--tok_thresh', type=int, default=5)
+
     args = parser.parse_args()
 
-    create_nested(args.clipmodel, args.pretok)
+    create_nested(args.clipmodel, args.pretok, args.tok_thresh)
 
