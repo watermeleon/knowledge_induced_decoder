@@ -200,12 +200,7 @@ class PromptDecoder(Module):
             pad_kw_tensor = pad_emb.clone().detach().repeat(b_s, max_kw, 1)
             visible_matrix_batch = visible_matrix_batch.unsqueeze(1)
         else:
-            ksb_out = None
-            ksb_pad_mask = None
-            pad_kw_tensor = None
-            visible_matrix_batch = None
-            seg_batch = None
-            kw_lengths = None
+            ksb_out, ksb_pad_mask, pad_kw_tensor, visible_matrix_batch, seg_batch, kw_lengths = None, None, None, None, None, None
         
         for i, l in enumerate(self.layers):                    
             ksb_out, sent_out = l(ksb_out, sent_out, encoder_output, mask_queries, ksb_pad_mask, mask_self_att_sent, visible_matrix_batch, mask_encoder, seg_batch, pad_kw_tensor, kw_lengths, self.stateful_1)
