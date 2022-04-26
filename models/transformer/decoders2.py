@@ -191,7 +191,16 @@ class PromptDecoder(Module):
 
         
         if self.stateful_1 < 2:
-            ksb_out = self.word_emb(know_sent_batch) + self.pos_emb(position_batch)
+            try:
+                wordemb_ksb = self.word_emb(know_sent_batch)
+            except:
+                print("can't get wordembs for:", know_sent_batch)
+                
+            try:
+                posemb_ksb = self.pos_emb(position_batch)
+            except:
+                print("can't get posemb, for:", position_batch)
+            ksb_out = wordemb_ksb + posemb_ksb
             if self.seg_token == True:
                 ksb_out += 1
 

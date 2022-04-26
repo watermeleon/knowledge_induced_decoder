@@ -60,6 +60,8 @@ def train_xe(model, dataloader, optim, spec, vocab_size):
     # profile.enable()
     with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=spec['tdqm_disable']) as pbar:
         for it, (detections, captions, context_feats) in enumerate(dataloader):
+            if it < 1301:
+                continue
             detections, captions, context_feats = detections.to(device), captions.to(device), context_feats.to(device)
             out = model(detections, captions, context_feats)
             optim.zero_grad()
