@@ -69,7 +69,7 @@ class MeshedDecoder(Module):
                  self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False):
         super(MeshedDecoder, self).__init__()
         self.d_model = d_model
-        self.num_kw= 4
+
         if pt_tokemb:
             print("using pretrained token embeddings")
             self.word_emb = embedding_table(vocab_size, d_model, padding_idx, enc_model, spec["device"])
@@ -90,6 +90,8 @@ class MeshedDecoder(Module):
         self.max_pref = 0
         self.seg_token = seg_token
         
+        kw_tokens = 15
+        self.pos_start_sent =  kw_tokens + KG.first_pos_idx
     
 
     def forward(self, input, encoder_output, mask_encoder, contextfeat):
@@ -112,9 +114,6 @@ class MeshedDecoder(Module):
             max_pref = know_sent_batch.size(1)           
             self.max_pref = max_pref
 
-        bs , seq_len = input.size()
-        tot_seq = max_pref + seq_len
-
         b_s, seq_len = input.shape[:2]
         mask_queries = (input != self.padding_idx).unsqueeze(-1).float()  # (b_s, seq_len, 1)
          
@@ -122,11 +121,10 @@ class MeshedDecoder(Module):
         mask_self_attention = mask_self_attention.unsqueeze(0).unsqueeze(0)  # (1, 1, seq_len, seq_len)
         mask_self_attention = mask_self_attention + (input == self.padding_idx).unsqueeze(1).unsqueeze(1).byte()   # (b_s, 1, seq_len, seq_len)
         mask_self_attention = mask_self_attention.gt(0)  # (b_s, 1, seq_len, seq_len)
-        # print("attmask4", mask_self_attention.size())
 
         mask_self_attention_copy = mask_self_attention.clone()
 
-        seq = torch.arange(self.num_kw +1 , seq_len + self.num_kw+1).view(1, -1).expand(b_s, -1).to(input.device)  # (b_s, seq_len)
+        seq = torch.arange(self.pos_start_sent , seq_len + self.pos_start_sent, device = input.device).view(1, -1).expand(b_s, -1) # (b_s, seq_len)
         seq = seq.masked_fill(mask_queries.squeeze(-1) == 0, 0)
 
         if self._is_stateful:
@@ -147,7 +145,7 @@ class MeshedDecoder(Module):
             tot_seq2 = max_pref + seq_len2
 
             # compute the combi mask
-            combi_mask = torch.ones((bs, tot_seq1, tot_seq2))
+            combi_mask = torch.ones((b_s, tot_seq1, tot_seq2))
             combi_mask[:,:max_pref,:max_pref] = visible_matrix_batch
             combi_mask[:, -seq_len1:, -seq_len2:] = mask_self_attention.squeeze(1)
 
@@ -165,8 +163,8 @@ class MeshedDecoder(Module):
 
         wordemb = self.word_emb(input)
         posemb = self.pos_emb(seq)
-
         out =  wordemb + posemb 
+        
         if self.seg_token == True and self.stateful_1 < 2:
             out[:,:-seq_len,:] += 1
         mask_pad = seq.clone().detach()
