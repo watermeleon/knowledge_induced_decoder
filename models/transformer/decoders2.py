@@ -21,7 +21,7 @@ class PromptDecoderLayer(Module):
         self.ksb_msca = MSCA(d_model, d_k, d_v, h, d_ff, dropout, self_att_module,
                  enc_att_module, self_att_module_kwargs, enc_att_module_kwargs)
 
-        self.register_state('running_kw_sent', torch.zeros((0, d_model)))
+        # self.register_state('running_kw_sent', torch.zeros((0, d_model)))
         self.register_state('running_ksb_outp', torch.zeros((0, d_model)))
 
 
