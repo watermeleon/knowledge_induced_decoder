@@ -33,23 +33,17 @@ class KnowledgeGraph(object):
         self.predicate = predicate
         self.kw_size = kw_size
         self.rw_size = rw_size
+        self.device = device
+        self.on_lisa = on_lisa
+        
         # max num related words is 5 + relationship label  = 6, but make 8 to binary reasons?
         self.first_pos_idx = 8
         print("using edge select type:", edge_select)
-
         pretok = ""
         if edge_select == "clipemb_pretok":
             pretok = "_pretok"
             edge_select = "clipemb"
         graph_path = '../data_files/CN_feats/concNet_nested_emb_'+ str(enc_model)+ pretok +'.pkl'
-
-        # if edge_select == "random":
-        #     graph_path= '../data_files/conceptnet_filt_nest.pkl'8997326
-        # if edge_select == "clipemb":
-        #     graph_path= '../data_files/concNetFilt_emb_Banana_lisa2_save.pkl'
-        # elif edge_select == "clipemb_pretok":
-        #     graph_path= '../data_files/concNetFilt_emb_Banana_lisa2_pretok2.pkl'
-        #     edge_select = "clipemb"
 
         with open(graph_path, 'rb') as f:
                         self.lookupdict = pickle.load(f)
@@ -57,8 +51,6 @@ class KnowledgeGraph(object):
         self.edge_select = edge_select
         self.tokenizer = get_tokenizer("spacy")
 
-        self.device = device
-        self.on_lisa = on_lisa
 
         self.ps = PorterStemmer()
         self.special_tags = set(config.NEVER_SPLIT_TAG)
@@ -70,19 +62,11 @@ class KnowledgeGraph(object):
         self.spec = spec
         if spec is not None:
             self.remlist = [spec["bos_tokenid"], spec["eos_tokenid"]]
-        
-        # if on_lisa:
-        #     cn_wordfeats_path = "../Datasets/conceptNet_embedding_hf_lisa.pkl"
-        # else:
-        #     cn_wordfeats_path = "/media/leonardo/Floppy/conceptNet_embedding_hf.pkl"
-        #     self.img_feats = h5py.File("/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", 'r')
-        # with open(cn_wordfeats_path, 'rb') as f:
-        #             self.cn_wordfeats = pickle.load(f)
+    
 
         pth_clipemb = "../data_files/keyword_embedding_"+str(enc_model)+".pkl"
         with open(pth_clipemb, 'rb') as f:
                     all_wordemb = pickle.load(f)
-
         self.all_keywords = [word["word"] for word in all_wordemb["captions"]]
         self.all_keywordembed = torch.stack([word for word in all_wordemb["clip_embedding"]]).to(self.device)
 
@@ -95,7 +79,6 @@ class KnowledgeGraph(object):
 
     def get_ranked_edges(self, unigram, max_edges,  image_emb= None):
         all_edges = np.array(self.lookupdict[unigram])
-
 
         if len(all_edges)<=max_edges:
             if self.edge_select == "clipemb" and len(all_edges) > 0:
@@ -125,18 +108,12 @@ class KnowledgeGraph(object):
         return token_batch
 
     def entities_tokenized_pretok(self, entities):
-
-        # wordlist1 = entities[:,0]
-        # wordlist2 = entities[:,1]
         order_rel = []
-
         combitoklist = []
         for ent in entities:
             combitoks = ent[0] + ent[1]
             combitoklist.append(combitoks)
             order_rel.append(ent[2])
-        # berttokens = self.transformer_tokenizer(ent_list, padding=False).input_ids
-        # token_ent = [list(full_tok)[1:-1] for full_tok in berttokens]
 
         return combitoklist , order_rel
 
@@ -302,12 +279,6 @@ class KnowledgeGraph(object):
                         visible_abs_idx = ent + src_ids
                         visible_matrix[id, visible_abs_idx] = 1
             
-            # ensure no soft pos index is lower than 0,increase so lowest is 0
-            # ToDo: shouldn't the 1 be a 0 ? below
-            # diff_pos = min(1,min(pos))
-            # if diff_pos!=0:
-            #     pos = [item-diff_pos for item in pos]
-
             src_length = len(know_sent)
             sent_sizes.append(src_length)
             if len(know_sent) < max_length:
@@ -315,7 +286,6 @@ class KnowledgeGraph(object):
                 pad_num = max_length - src_length
                 know_sent += [PAD_TOKEN] * pad_num
                 seg += [1] * pad_num
-                # pos += [max_length*2 - 1] * pad_num
                 pos += [0] * pad_num
 
                 visible_matrix = np.pad(visible_matrix, ((0, pad_num), (0, pad_num)), 'constant')  # pad 0
