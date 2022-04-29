@@ -157,10 +157,8 @@ class KnowledgeGraph(object):
             all_img_embs.append(image_emb)
             res = self.cossim(self.all_keywordembed, image_emb)
             topNind = torch.topk(res.flatten(), self.kw_size).indices
-            topNsent = ""
             topNwordlist = []
             for ind in topNind:
-                topNsent += " " + self.all_keywords[ind]
                 topNwordlist.append(self.all_keywords[ind])
             sent_batch.append(topNwordlist)
         return self.add_knowledge_with_vm(sent_batch, image_emb=all_img_embs, max_edges=self.rw_size, add_pad=True, max_length=64, prefix_size = None)
@@ -198,7 +196,6 @@ class KnowledgeGraph(object):
             num_toks = 0
 
             split_sent_vanilla = sent_batch[sent_it]
-            # split_sent_vanilla = self.tokenizer(split_sent_vanilla1)
             for token_it, token in enumerate(split_sent):    
                 unigram = split_sent_vanilla[token_it]
                 entities,  order_rel = [], []
@@ -226,7 +223,7 @@ class KnowledgeGraph(object):
                     ent_abs_idx : seems to be same actually
                     """
 
-                    if order_rel[j]==1:
+                    if order_rel[j]==0:
                         ent_pos_idx = [token_pos_idx[-1] + i for i in range(1, len(ent)+1)]
                     else:
                         ent_pos_idx = [token_pos_idx[-1] - i for i in range(1, len(ent)+1)]

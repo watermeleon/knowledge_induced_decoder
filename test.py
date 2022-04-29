@@ -71,7 +71,7 @@ if __name__ == '__main__':
     parser.add_argument('--onlisa', type=str, default="True", choices=['True', 'False'])
     parser.add_argument('--seg_token', type=str, default="False", choices=['True', 'False'])
     parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb','clipemb_pretok'])
-    parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused'])
+    parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused', 'prompt_decoder'])
     parser.add_argument('--tokenizer', type=str, default="bert", choices=['bert', 'clip'])
     parser.add_argument('--enc_model', type=str, default="ViT", choices=['ViT', 'rn50x4'])
     parser.add_argument('--num_keywords', type=int, default=5)
@@ -79,6 +79,8 @@ if __name__ == '__main__':
     parser.add_argument('--feat_size', type=int, default=2048)
     parser.add_argument('--resume', type=str, default="best", choices=['best', 'last'])
     parser.add_argument('--d_att', type=int, default=64)
+    parser.add_argument('--pt_token_emb', action='store_true')
+
 
     args = parser.parse_args()
 
@@ -144,9 +146,11 @@ if __name__ == '__main__':
     knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model)
 
     if args.decoder == "kg_infused":
-        decoder = PromptDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph, enc_model= args.enc_model, spec=spec )
+        decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)
+    elif args.decoder == "prompt_decoder":
+        decoder = PromptDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)
     elif args.decoder == "vanilla":
-        decoder = VanillaDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att)
+        decoder = VanillaDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, enc_model = args.enc_model)
 
     model = Transformer(spec['bos_tokenid'], encoder, decoder).to(device)
 
