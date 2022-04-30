@@ -179,8 +179,9 @@ class PromptDecoder(Module):
         if self._is_stateful:
             self.running_mask_self_attention = torch.cat([self.running_mask_self_attention, mask_self_attention], -1)
             mask_self_att_sent = self.running_mask_self_attention
+            seq = self.running_seq + self.pos_start_sent
             self.running_seq.add_(1)
-            seq = self.running_seq + self.max_pref
+
             if self.stateful_1 == 1:
                 self.running_mask_self_attention = torch.cat((sent_kw_mask, mask_self_att_sent), -1).gt(0)
 
