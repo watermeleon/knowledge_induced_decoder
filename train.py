@@ -209,8 +209,8 @@ if __name__ == '__main__':
                                            num_workers=args.workers)
         dict_dataloader_val = DataLoader(dict_dataset_val, batch_size=args.batch_size // 5)
         dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size // 5)
-        scores = evaluate_metrics(model, dict_dataloader_val, spec, transform_tok = tokenizerBW_dec)
-        print("these scores be all like:", scores)
+        # scores = evaluate_metrics(model, dict_dataloader_val, spec, transform_tok = tokenizerBW_dec)
+        # print("these scores be all like:", scores)
         if not use_rl:
             train_loss = train_xe(model, dataloader_train, optim, spec, len(tokenizerBW))
             writer.add_scalar('data/train_loss', train_loss, e)
