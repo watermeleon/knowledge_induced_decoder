@@ -131,8 +131,8 @@ class MeshedDecoder(Module):
             # the first time mask_self_attention, remains the same as normal
             self.running_mask_self_attention = torch.cat([self.running_mask_self_attention, mask_self_attention], -1)
             mask_self_attention = self.running_mask_self_attention
+            seq = self.running_seq + self.pos_start_sent
             self.running_seq.add_(1)
-            seq = self.running_seq + self.max_pref
 
             # after the first time seg_batch is loaded from memory.
             if self.stateful_1 == 1:
