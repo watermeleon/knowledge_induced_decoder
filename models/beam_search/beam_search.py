@@ -1,5 +1,6 @@
 import torch
 import utils
+import torch.nn.functional as F
 
 
 class BeamSearch(object):
@@ -106,6 +107,36 @@ class BeamSearch(object):
     def select(self, t, candidate_logprob, **kwargs):
         selected_logprob, selected_idx = torch.sort(candidate_logprob.view(self.b_s, -1), -1, descending=True)
         selected_logprob, selected_idx = selected_logprob[:, :self.beam_size], selected_idx[:, :self.beam_size]
+        return selected_idx, selected_logprob
+
+    def select_sample(self, candidate_logprob):
+        # make sure the beam_size is set to 1
+
+        candlog = candidate_logprob.view(b_s, -1)
+        samp_probs = F.softmax(candlog, dim=-1)
+        if self.sampling == "temp":
+            # sharpens peaks
+            temp = 0.2
+            samp_probs = F.softmax(candlog.div_(temp), dim=-1)
+        if self.sampling == "topk":
+            k = 5
+            indices_to_remove = samp_probs < torch.topk(samp_probs, k)[0][..., -1, None]
+            samp_probs[indices_to_remove] = 0
+            selected_idx = samp_probs.multinomial(1)
+            selected_logprob = samp_probs.gather(1, selected_idx.view(-1, 1)).log()
+        elif self.sampling == "nucleus":
+            p = 0.6 
+            sorted_probs, sorted_indices = torch.sort(samp_probs, descending=True)
+            cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
+            sorted_indices_to_remove = cumulative_probs > p
+            sorted_indices_to_remove[:, 1:] = sorted_indices_to_remove[:, :-1].clone()
+            sorted_indices_to_remove[:, 0] = 0
+            sorted_samp_probs = sorted_probs.clone()
+            sorted_samp_probs[sorted_indices_to_remove] = 0
+
+            sorted_next_indices = sorted_samp_probs.multinomial(1).view(-1, 1)
+            selected_idx = sorted_indices.gather(1, sorted_next_indices)
+            selected_logprob = sorted_samp_probs.gather(1, sorted_next_indices).log()
         return selected_idx, selected_logprob
 
     def iter(self, t: int, visual: utils.TensorOrSequence, contextfeat: utils.TensorOrSequence, outputs, return_probs, **kwargs):
