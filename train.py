@@ -67,6 +67,7 @@ if __name__ == '__main__':
     parser.add_argument('--pt_token_emb', action='store_true')
     parser.add_argument('--start_rl', action='store_true')
     parser.add_argument('--only_kw', action='store_true')
+    parser.add_argument('--no_rel_label', action='store_true')
 
     parser.add_argument('--d_att', type=int, default=64)
 
@@ -140,7 +141,7 @@ if __name__ == '__main__':
 
     onlisa = args.onlisa == "True"
     seg_token = args.seg_token == "True"
-    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw)
+    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw, norel= args.no_rel_label)
 
     if args.decoder == "kg_infused":
         print("using normal dec")

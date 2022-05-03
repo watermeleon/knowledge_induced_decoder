@@ -28,14 +28,15 @@ class KnowledgeGraph(object):
     spo_files - list of Path of *.spo files, or default kg name. e.g., ['HowNet']
     """
 
-    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None, on_lisa=True, edge_select="random", spec=None, kw_size = 5, rw_size = 5, enc_model = "ViT", only_kw = False):
+    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None, on_lisa=True, edge_select="random", spec=None, kw_size = 5, rw_size = 5, enc_model = "ViT", only_kw = False, norel= False):
         self.only_kw = only_kw
         self.predicate = predicate
         self.kw_size = kw_size
         self.rw_size = rw_size
         self.device = device
         self.on_lisa = on_lisa
-        
+        self.norel = norel
+
         # max num related words is 5 + relationship label  = 6, but make 8 to binary reasons?
         self.first_pos_idx = 8
         print("using edge select type:", edge_select)
@@ -111,7 +112,11 @@ class KnowledgeGraph(object):
         order_rel = []
         combitoklist = []
         for ent in entities:
-            combitoks = ent[0] + ent[1]
+            if self.norel:
+                relatedword_idx = int(not(ent[2]))
+                combitoks = ent[relatedword_idx]
+            else:
+                combitoks = ent[0] + ent[1]
             combitoklist.append(combitoks)
             order_rel.append(ent[2])
 
@@ -223,7 +228,7 @@ class KnowledgeGraph(object):
                     ent_abs_idx : seems to be same actually
                     """
 
-                    if order_rel[j]==0:
+                    if self.norel or order_rel[j]==0:
                         ent_pos_idx = [token_pos_idx[-1] + i for i in range(1, len(ent)+1)]
                     else:
                         ent_pos_idx = [token_pos_idx[-1] - i for i in range(1, len(ent)+1)]
