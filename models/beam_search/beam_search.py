@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class BeamSearch(object):
-    def __init__(self, model, max_len: int, eos_idx: int, beam_size: int):
+    def __init__(self, model, max_len: int, eos_idx: int, beam_size: int, sampling_method:str, sampling_temp:float):
         self.model = model
         self.max_len = max_len
         self.eos_idx = eos_idx
@@ -17,6 +17,8 @@ class BeamSearch(object):
         self.log_probs = None
         self.selected_words = None
         self.all_log_probs = None
+        self.sampling_method = sampling_method
+        self.sampling_temp = sampling_temp
 
     def _expand_state(self, selected_beam, cur_beam_size):
         def fn(s):
@@ -105,28 +107,35 @@ class BeamSearch(object):
             return outputs, log_probs
 
     def select(self, t, candidate_logprob, **kwargs):
-        selected_logprob, selected_idx = torch.sort(candidate_logprob.view(self.b_s, -1), -1, descending=True)
+        selected_logprob, selected_idx = torch.sort(candidate_logprob.view(self.b_s, -1), -1, descending=True) # [bs, 1, vocab_size]
         selected_logprob, selected_idx = selected_logprob[:, :self.beam_size], selected_idx[:, :self.beam_size]
         return selected_idx, selected_logprob
 
-    def select_sample(self, candidate_logprob):
-        # make sure the beam_size is set to 1
+    def select_sample(self,t, candidate_logprob, **kwargs):
+        # use original select
+        if self.sampling_method == "beam":
+            return self.select(t, candidate_logprob)
 
-        candlog = candidate_logprob.view(b_s, -1)
+        candlog = candidate_logprob.view(self.b_s, -1)
         samp_probs = F.softmax(candlog, dim=-1)
-        if self.sampling == "temp":
-            # sharpens peaks
-            temp = 0.2
-            samp_probs = F.softmax(candlog.div_(temp), dim=-1)
-        if self.sampling == "topk":
-            k = 5
+        samp_probs_orig = samp_probs.clone()
+        if self.sampling_temp != 1:
+            # sharpens peaks by lower temp
+            samp_probs = F.softmax(candlog.div_(self.sampling_temp), dim=-1)
+
+        if self.sampling_method == "topk":
+            # use top-k sampling , sample k**2 = 25 beams, keep 5
+            k = self.beam_size ** 2
             indices_to_remove = samp_probs < torch.topk(samp_probs, k)[0][..., -1, None]
             samp_probs[indices_to_remove] = 0
-            selected_idx = samp_probs.multinomial(1)
-            selected_logprob = samp_probs.gather(1, selected_idx.view(-1, 1)).log()
-        elif self.sampling == "nucleus":
+            selected_idx = samp_probs.multinomial(self.beam_size)
+            selected_logprob = samp_probs_orig.gather(1, selected_idx)
+        elif self.sampling_method == "nucleus":
+            # use nucleus sampling with fixed p
             p = 0.6 
             sorted_probs, sorted_indices = torch.sort(samp_probs, descending=True)
+            sorted_orig_probs, _ = torch.sort(samp_probs, descending=True)
+
             cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
             sorted_indices_to_remove = cumulative_probs > p
             sorted_indices_to_remove[:, 1:] = sorted_indices_to_remove[:, :-1].clone()
@@ -134,16 +143,14 @@ class BeamSearch(object):
             sorted_samp_probs = sorted_probs.clone()
             sorted_samp_probs[sorted_indices_to_remove] = 0
 
-            sorted_next_indices = sorted_samp_probs.multinomial(1).view(-1, 1)
+            sorted_next_indices = sorted_samp_probs.multinomial(self.beam_size)
             selected_idx = sorted_indices.gather(1, sorted_next_indices)
-            selected_logprob = sorted_samp_probs.gather(1, sorted_next_indices).log()
+            selected_logprob = sorted_orig_probs.gather(1, sorted_next_indices).log()
         return selected_idx, selected_logprob
 
     def iter(self, t: int, visual: utils.TensorOrSequence, contextfeat: utils.TensorOrSequence, outputs, return_probs, **kwargs):
         cur_beam_size = 1 if t == 0 else self.beam_size
-
         word_logprob = self.model.step(t, self.selected_words, visual, None, mode='feedback', contextfeat = contextfeat, **kwargs)
-        # print("wordlogprob4:",word_logprob, word_logprob.size())
         word_logprob = word_logprob.view(self.b_s, cur_beam_size, -1)
         candidate_logprob = self.seq_logprob + word_logprob
 
@@ -156,21 +163,15 @@ class BeamSearch(object):
             old_seq_logprob[:, :, 1:] = -999
             candidate_logprob = self.seq_mask * candidate_logprob + old_seq_logprob * (1 - self.seq_mask)
 
-        selected_idx, selected_logprob = self.select(t, candidate_logprob, **kwargs)
+        selected_idx, selected_logprob = self.select_sample(t, candidate_logprob, **kwargs)
         selected_beam = selected_idx  / candidate_logprob.shape[-1]
-        # print("sel beam 1" , selected_beam)
         error_marg = 1/(4*candidate_logprob.shape[-1])
         selected_beam += error_marg
         selected_beam = selected_beam.type(torch.int64)
-        # print("sel beam 2:", selected_beam, "err marg:", error_marg)
-        # print(candidate_logprob.shape[-1], selected_idx)
-        selected_words = selected_idx - selected_beam * candidate_logprob.shape[-1]
-        # print("sel beam, cur beam", selected_beam, cur_beam_size, candidate_logprob.shape[-1])
-        self.model.apply_to_states(self._expand_state(selected_beam, cur_beam_size))
 
-        # print(" feats were:",visual.size(), contextfeat.size() )
+        selected_words = selected_idx - selected_beam * candidate_logprob.shape[-1]
+        self.model.apply_to_states(self._expand_state(selected_beam, cur_beam_size))
         visual, contextfeat = self._expand_visual(visual,contextfeat, cur_beam_size, selected_beam)
-        # print(" feats are now:",visual.size(), contextfeat.size() )
 
         self.seq_logprob = selected_logprob.unsqueeze(-1)
         self.seq_mask = torch.gather(self.seq_mask, 1, selected_beam.unsqueeze(-1))
@@ -186,7 +187,7 @@ class BeamSearch(object):
         this_word_logprob = torch.gather(word_logprob, 1,
                                          selected_beam.unsqueeze(-1).expand(self.b_s, self.beam_size,
                                                                             word_logprob.shape[-1]))
-        # print("t", t,"this_word_logprob",this_word_logprob, this_word_logprob.size(),"selected_words.unsqueeze(-1)", selected_words.unsqueeze(-1), selected_words.unsqueeze(-1).size() )
+
         this_word_logprob = torch.gather(this_word_logprob, 2, selected_words.unsqueeze(-1))
         self.log_probs = list(
             torch.gather(o, 1, selected_beam.unsqueeze(-1).expand(self.b_s, self.beam_size, 1)) for o in self.log_probs)

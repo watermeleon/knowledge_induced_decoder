@@ -7,6 +7,8 @@ from models.beam_search import *
 
 class CaptioningModel(Module):
     def __init__(self):
+        self.sampling_temp = 1
+        self.sampling_method = "beam"
         super(CaptioningModel, self).__init__()
 
     def init_weights(self):
@@ -66,5 +68,5 @@ class CaptioningModel(Module):
 
     def beam_search(self, visual: utils.TensorOrSequence,contextfeat: utils.TensorOrSequence , max_len: int, eos_idx: int, beam_size: int, out_size=1,
                     return_probs=False, **kwargs):
-        bs = BeamSearch(self, max_len, eos_idx, beam_size)
+        bs = BeamSearch(self, max_len, eos_idx, beam_size,self.sampling_method, self.sampling_temp)
         return bs.apply(visual, contextfeat, out_size, return_probs, **kwargs)
