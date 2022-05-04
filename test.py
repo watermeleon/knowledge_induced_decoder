@@ -81,9 +81,12 @@ if __name__ == '__main__':
     parser.add_argument('--d_att', type=int, default=64)
     parser.add_argument('--pt_token_emb', action='store_true')
 
+    parser.add_argument('--sampling_method', type=str, default="nucleus", choices=['topk', 'beam', 'nucleus'])
+    parser.add_argument('--sampling_temp', type=float, default=1)
+
 
     args = parser.parse_args()
-
+    print(args)
     print('Meshed-Memory Transformer Evaluation')
     print('path', args.features_path)
 
@@ -153,8 +156,8 @@ if __name__ == '__main__':
         decoder = VanillaDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, enc_model = args.enc_model)
 
     model = Transformer(spec['bos_tokenid'], encoder, decoder).to(device)
-
-
+    model.sampling_temp = args.sampling_temp
+    model.sampling_method = args.sampling_method
     # data = torch.load('meshed_memory_transformer.pth')
     # model.load_state_dict(data['state_dict'])
 
