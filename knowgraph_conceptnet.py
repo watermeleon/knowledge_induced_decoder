@@ -28,7 +28,7 @@ class KnowledgeGraph(object):
     spo_files - list of Path of *.spo files, or default kg name. e.g., ['HowNet']
     """
 
-    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None, on_lisa=True, edge_select="random", spec=None, kw_size = 5, rw_size = 5, enc_model = "ViT", only_kw = False, norel= False):
+    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None, on_lisa=True, edge_select="random", spec=None, kw_size = 5, rw_size = 5, enc_model = "ViT", only_kw = False, norel= False, only_l2r = False):
         self.only_kw = only_kw
         self.predicate = predicate
         self.kw_size = kw_size
@@ -36,6 +36,7 @@ class KnowledgeGraph(object):
         self.device = device
         self.on_lisa = on_lisa
         self.norel = norel
+        self.only_l2r = only_l2r
 
         # max num related words is 5 + relationship label  = 6, but make 8 to binary reasons?
         self.first_pos_idx = 8
@@ -228,7 +229,7 @@ class KnowledgeGraph(object):
                     ent_abs_idx : seems to be same actually
                     """
 
-                    if self.norel or order_rel[j]==0:
+                    if self.only_l2r or order_rel[j]==0:
                         ent_pos_idx = [token_pos_idx[-1] + i for i in range(1, len(ent)+1)]
                     else:
                         ent_pos_idx = [token_pos_idx[-1] - i for i in range(1, len(ent)+1)]
