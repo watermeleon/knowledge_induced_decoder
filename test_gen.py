@@ -16,40 +16,42 @@ import argparse
 import pickle
 import numpy as np
 import ftfy
+import json
+
+from pathlib import Path
 
 random.seed(1234)
 torch.manual_seed(1234)
 np.random.seed(1234)
 
 
-def predict_captions(model, dataloader, spec, transform_tok):
+def gen_captions(model, dataloader, spec, transform_tok, out_file):
     import itertools
     model.eval()
-    gen = {}
-    gts = {}
+
+    all_captions = []
     with tqdm(desc='Evaluation', unit='it', total=len(dataloader)) as pbar:
         for it, (images, caps_gt) in enumerate(iter(dataloader)):
             # images = images.to(device)
-            caps_gt, context_feats = caps_gt[0], torch.stack(caps_gt[1])
+            images, img_ids = images
+            context_feats =  torch.stack(caps_gt[1])
             context_feats = context_feats[:,0,:,:]
             images, context_feats = images.to(device), context_feats.to(device)
             with torch.no_grad():
-                out, _ = model.beam_search(images, context_feats, 20, spec['eos_tokenid'], 5, out_size=1)
+                out, _ = model.beam_search(images, context_feats, 40, spec['eos_tokenid'], 5, out_size=1)
 
             caps_gen = [transform_tok.decode(sent) for sent in out] 
-            caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen]
-            print("capsgen:", caps_gen)
-            print("caps GT:", caps_gt, "\n")
-            for i, (gts_i, gen_i) in enumerate(zip(caps_gt, caps_gen)):
-                gen['%d_%d' % (it, i)] = [gen_i.strip(), ]
-                gts['%d_%d' % (it, i)] = gts_i
+            caps_gen = [sent.split("<|endoftext|>")[0].strip() for sent in caps_gen]
+
+            for (img_id, gen_i) in zip(img_ids, caps_gen):
+                entry = {"caption": gen_i, "image_id":img_id.item() }
+                all_captions.append(entry)
+            # break
             pbar.update()
 
-    gts = evaluation.PTBTokenizer.tokenize(gts)
-    gen = evaluation.PTBTokenizer.tokenize(gen)
-    scores, _ = evaluation.compute_scores(gts, gen)
-
-    return scores
+    with open(out_file, 'w') as f:
+        json.dump(all_captions, f)
+    # return scores
 
 
 if __name__ == '__main__':
@@ -144,7 +146,7 @@ if __name__ == '__main__':
                                      attention_module_kwargs={'m': args.m})
 
     seg_token = args.seg_token == "True"
-    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model)
+    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device,edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model)
 
     if args.decoder == "kg_infused":
         decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)
@@ -183,5 +185,10 @@ if os.path.exists(fname):
     dict_dataset_test = test_dataset.image_dictionary({'image': image_field, 'text': RawField(), "img_id": clipemb_field})
     dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size, num_workers=args.workers,shuffle=True)
 
-    scores = predict_captions(model, dict_dataloader_test, spec, tokenizerBW_dec)
-    print(scores)
+    output_path = "./generated_sentences/"
+    Path(output_path).mkdir(parents=True, exist_ok=True)
+    out_file = "coco_" +str(args.sampling_method) +"_"+str(args.sampling_temp)+".json"
+    out_file = output_path + out_file
+    print("Output path:", out_file)
+
+    gen_captions(model, dict_dataloader_test, spec, tokenizerBW_dec, out_file)
