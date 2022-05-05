@@ -40,7 +40,6 @@ np.random.seed(seed_num)
 
 exec(open("training_functions.py").read())
 
-
 if __name__ == '__main__':
     device = torch.device('cuda')
 
@@ -56,7 +55,7 @@ if __name__ == '__main__':
     parser.add_argument('--resume_best', action='store_true')
     parser.add_argument('--features_path', type=str)
     parser.add_argument('--contextfeat_path', type=str)
-    parser.add_argument('--onlisa', type=str, default="True", choices=['True', 'False'])
+    # parser.add_argument('--onlisa', type=str, default="True", choices=['True', 'False'])
     parser.add_argument('--seg_token', type=str, default="False", choices=['True', 'False'])
     parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb','clipemb_pretok'])
     parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused', 'prompt_decoder'])
@@ -141,9 +140,8 @@ if __name__ == '__main__':
     encoder = MemoryAugmentedEncoder(3, 0, d_in=inp_feat_size,  attention_module=ScaledDotProductAttention,
                                      attention_module_kwargs={'m': args.m})
 
-    onlisa = args.onlisa == "True"
     seg_token = args.seg_token == "True"
-    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, on_lisa = onlisa, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw, norel= args.no_rel_label, only_l2r = args.rel_only_l2r)
+    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw, norel= args.no_rel_label, only_l2r = args.rel_only_l2r)
 
     if args.decoder == "kg_infused":
         print("using normal dec")
@@ -214,8 +212,8 @@ if __name__ == '__main__':
                                            num_workers=args.workers)
         dict_dataloader_val = DataLoader(dict_dataset_val, batch_size=args.batch_size // 5)
         dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size // 5)
-        scores = evaluate_metrics(model, dict_dataloader_val, spec, transform_tok = tokenizerBW_dec)
-        print("these scores be all like:", scores)
+        # scores = evaluate_metrics(model, dict_dataloader_val, spec, transform_tok = tokenizerBW_dec)
+        # print("these scores be all like:", scores)
         if not use_rl:
             train_loss = train_xe(model, dataloader_train, optim, spec, len(tokenizerBW))
             writer.add_scalar('data/train_loss', train_loss, e)
