@@ -105,8 +105,8 @@ class ImageDetectionsField(RawField):
         super(ImageDetectionsField, self).__init__(preprocessing, postprocessing)
 
     def preprocess(self, x, avoid_precomp=False):
-        if self.print_img_name:
-            print("field img:", x)
+        # if self.print_img_name:
+        #     print("field img:", x)
 
         image_id = int(x.split('_')[-1].split('.')[0])
         # print("id is here:", image_id, "path is:", self.detections_path)
@@ -126,7 +126,10 @@ class ImageDetectionsField(RawField):
         elif delta < 0:
             precomp_data = precomp_data[:self.max_detections]
 
-        return precomp_data.astype(np.float32)
+        if self.print_img_name:
+            return precomp_data.astype(np.float32), image_id
+        else:
+            return precomp_data.astype(np.float32)
 
 class ClipEmbDetectionsField(RawField):
     def __init__(self, preprocessing=None, postprocessing=None, detections_path=None, max_detections=100,

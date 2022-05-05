@@ -85,6 +85,10 @@ if __name__ == '__main__':
     parser.add_argument('--sampling_method', type=str, default="beam", choices=['topk', 'beam', 'nucleus'])
     parser.add_argument('--sampling_temp', type=float, default=1)
 
+    parser.add_argument('--no_rel_label', action='store_true')
+    parser.add_argument('--rel_only_l2r', action='store_true')
+    parser.add_argument('--only_kw', action='store_true')
+
 
     args = parser.parse_args()
     print(args)
@@ -146,7 +150,7 @@ if __name__ == '__main__':
                                      attention_module_kwargs={'m': args.m})
 
     seg_token = args.seg_token == "True"
-    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device,edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model)
+    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw, norel= args.no_rel_label, only_l2r = args.rel_only_l2r)
 
     if args.decoder == "kg_infused":
         decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)

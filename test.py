@@ -83,6 +83,10 @@ if __name__ == '__main__':
     parser.add_argument('--sampling_method', type=str, default="beam", choices=['topk', 'beam', 'nucleus'])
     parser.add_argument('--sampling_temp', type=float, default=1)
 
+    parser.add_argument('--no_rel_label', action='store_true')
+    parser.add_argument('--rel_only_l2r', action='store_true')
+    parser.add_argument('--only_kw', action='store_true')
+
 
     args = parser.parse_args()
     print(args)
