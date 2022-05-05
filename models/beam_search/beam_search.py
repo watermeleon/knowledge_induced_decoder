@@ -114,9 +114,9 @@ class BeamSearch(object):
     def select_sample(self,t, candidate_logprob, **kwargs):
         # use original select
         if self.sampling_method == "beam":
-            print("using beam")
+            # print("using beam")
             return self.select(t, candidate_logprob,  **kwargs)
-        print("doign whatev, royally fucked", self.sampling_method)
+        # print("doign whatev, royally fucked", self.sampling_method)
         candlog = candidate_logprob.view(self.b_s, -1)
         samp_probs = F.softmax(candlog, dim=-1)
         samp_probs_orig = samp_probs.clone()
