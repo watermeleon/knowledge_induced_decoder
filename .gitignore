@@ -15,3 +15,4 @@ annotations/
 /evaluation/meteor/data/
 
 saved_models/
+old_tensorboard/
