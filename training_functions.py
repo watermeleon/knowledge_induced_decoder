@@ -2,7 +2,6 @@ def evaluate_loss(model, dataloader, loss_fn, spec, vocab_size):
     # Validation loss
     model.eval()
     running_loss = .0
-    
     print("now doing eval loss")
     i = 0
     with tqdm(desc='Epoch %d - validation' % e, unit='it', total=len(dataloader),  disable=spec['tdqm_disable']) as pbar:
@@ -56,12 +55,9 @@ def train_xe(model, dataloader, optim, spec, vocab_size):
     running_loss = .0
     i = 0
     print("training XE")
-    # profile = cProfile.Profile()
-    # profile.enable()
+
     with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=spec['tdqm_disable']) as pbar:
         for it, (detections, captions, context_feats) in enumerate(dataloader):
-            # if it >= 1301:
-            
             detections, captions, context_feats = detections.to(device), captions.to(device), context_feats.to(device)
             out = model(detections, captions, context_feats)
             optim.zero_grad()
@@ -79,18 +75,11 @@ def train_xe(model, dataloader, optim, spec, vocab_size):
             pbar.update()
             scheduler.step()
 
-    #         if i >25:
-    #             break
-    #         i +=1
-    # profile.disable()
-    # ps = pstats.Stats(profile)
-    # ps.print_stats()
     loss = running_loss / len(dataloader)
     return loss
 
 
 def train_scst(model, dataloader, optim, cider, spec, transform_tok):
-
     # Training with self-critical
     tokenizer_pool = multiprocessing.Pool()
     running_reward = .0
@@ -111,7 +100,6 @@ def train_scst(model, dataloader, optim, cider, spec, transform_tok):
 
             # Rewards
             caps_gt = list(itertools.chain(*([c, ] * beam_size for c in caps_gt)))
-            # caps_gen = text_field.decode(outs.view(-1, seq_len))
             caps_gen = [transform_tok.decode(sent) for sent in outs.view(-1, seq_len)] 
             caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen] 
             # total its:14161
