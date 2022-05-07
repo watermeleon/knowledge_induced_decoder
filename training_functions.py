@@ -103,9 +103,9 @@ def train_scst(model, dataloader, optim, cider, spec, transform_tok):
             caps_gen = [transform_tok.decode(sent) for sent in outs.view(-1, seq_len)] 
             caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen] 
             # total its:14161
-            if it == 2265:
-                print("\n",caps_gen, "\n")
-                break
+            # if it == 2265:
+            #     print("\n",caps_gen, "\n")
+            #     break
             # this puts it in lists or something:
             caps_gen, caps_gt = tokenizer_pool.map(evaluation.PTBTokenizer.tokenize, [caps_gen, caps_gt])
             reward = cider.compute_score(caps_gt, caps_gen)[1].astype(np.float32)
