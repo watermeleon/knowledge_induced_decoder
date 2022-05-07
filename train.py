@@ -202,6 +202,9 @@ if __name__ == '__main__':
 
     if args.start_rl:
         use_rl = True
+        patience = 0
+        optim = Adam(model.parameters(), lr=5e-6)
+        print("Switching to RL")
 
     ########################################################################################################################################################################
     print("Training starts")
