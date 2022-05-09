@@ -54,6 +54,7 @@ def gen_captions(model, dataloader, spec, transform_tok, out_file):
     # return scores
 
 
+
 if __name__ == '__main__':
     device = torch.device('cuda')
     # device = torch.device('cpu')
@@ -189,10 +190,17 @@ if os.path.exists(fname):
     dict_dataset_test = test_dataset.image_dictionary({'image': image_field, 'text': RawField(), "img_id": clipemb_field})
     dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size, num_workers=args.workers,shuffle=True)
 
-    output_path = "./generated_sentences/"
-    Path(output_path).mkdir(parents=True, exist_ok=True)
-    out_file = "coco_" +str(args.sampling_method) +"_"+str(args.sampling_temp)+".json"
-    out_file = output_path + out_file
-    print("Output path:", out_file)
+    # Sampling options: ['topk', 'beam', 'nucleus'])
+    variationlist = [("beam", 1), ("topk", 0.2),("topk", 1),("topk", 2),("nucleus", 1)]
+    for sampling_method , sampling_temp in variationlist:
 
-    gen_captions(model, dict_dataloader_test, spec, tokenizerBW_dec, out_file)
+        model.sampling_temp = args.sampling_temp
+        model.sampling_method = args.sampling_method
+        output_path = "./generated_sentences/"
+        Path(output_path).mkdir(parents=True, exist_ok=True)
+        out_file = args.exp_name +"_coco_" +str(sampling_method) +"_"+str(sampling_temp)+".json"
+        out_file = output_path + out_file
+        print("Output path:", out_file)
+
+        gen_captions(model, dict_dataloader_test, spec, tokenizerBW_dec, out_file)
+
