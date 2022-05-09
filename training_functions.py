@@ -92,34 +92,35 @@ def train_scst(model, dataloader, optim, cider, spec, transform_tok):
     with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=spec['tdqm_disable']) as pbar:
         for it, (detections, caps_gt) in enumerate(dataloader):
             caps_gt, context_feats = caps_gt[0], torch.stack(caps_gt[1])
-            context_feats = context_feats[:,0,:,:]
-            detections, context_feats = detections.to(device) , context_feats.to(device)
-            outs, log_probs = model.beam_search(detections, context_feats, seq_len, spec["eos_tokenid"],
-                                                beam_size, out_size=beam_size)
-            optim.zero_grad()
+            if False:
+                context_feats = context_feats[:,0,:,:]
+                detections, context_feats = detections.to(device) , context_feats.to(device)
+                outs, log_probs = model.beam_search(detections, context_feats, seq_len, spec["eos_tokenid"],
+                                                    beam_size, out_size=beam_size)
+                optim.zero_grad()
 
-            # Rewards
-            caps_gt = list(itertools.chain(*([c, ] * beam_size for c in caps_gt)))
-            caps_gen = [transform_tok.decode(sent) for sent in outs.view(-1, seq_len)] 
-            caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen] 
-            # total its:14161
-            # if it == 2265:
-            #     print("\n",caps_gen, "\n")
-            #     break
-            # this puts it in lists or something:
-            caps_gen, caps_gt = tokenizer_pool.map(evaluation.PTBTokenizer.tokenize, [caps_gen, caps_gt])
-            reward = cider.compute_score(caps_gt, caps_gen)[1].astype(np.float32)
-            reward = torch.from_numpy(reward).to(device).view(detections.shape[0], beam_size)
-            reward_baseline = torch.mean(reward, -1, keepdim=True)
-            loss = -torch.mean(log_probs, -1) * (reward - reward_baseline)
+                # Rewards
+                caps_gt = list(itertools.chain(*([c, ] * beam_size for c in caps_gt)))
+                caps_gen = [transform_tok.decode(sent) for sent in outs.view(-1, seq_len)] 
+                caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen] 
+                # total its:14161
+                # if it == 2265:
+                #     print("\n",caps_gen, "\n")
+                #     break
+                # this puts it in lists or something:
+                caps_gen, caps_gt = tokenizer_pool.map(evaluation.PTBTokenizer.tokenize, [caps_gen, caps_gt])
+                reward = cider.compute_score(caps_gt, caps_gen)[1].astype(np.float32)
+                reward = torch.from_numpy(reward).to(device).view(detections.shape[0], beam_size)
+                reward_baseline = torch.mean(reward, -1, keepdim=True)
+                loss = -torch.mean(log_probs, -1) * (reward - reward_baseline)
 
-            loss = loss.mean()
-            loss.backward()
-            optim.step()
+                loss = loss.mean()
+                loss.backward()
+                optim.step()
 
-            running_loss += loss.item()
-            running_reward += reward.mean().item()
-            running_reward_baseline += reward_baseline.mean().item()
+                running_loss += loss.item()
+                running_reward += reward.mean().item()
+                running_reward_baseline += reward_baseline.mean().item()
             pbar.set_postfix(loss=running_loss / (it + 1), reward=running_reward / (it + 1),
                              reward_baseline=running_reward_baseline / (it + 1))
             pbar.update()
