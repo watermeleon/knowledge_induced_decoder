@@ -1,7 +1,7 @@
 
 import os
 
-os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+# os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 from ast import arg
