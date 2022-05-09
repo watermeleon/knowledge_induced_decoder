@@ -191,11 +191,11 @@ if os.path.exists(fname):
     dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size, num_workers=args.workers,shuffle=True)
 
     # Sampling options: ['topk', 'beam', 'nucleus'])
-    variationlist = [("beam", 1), ("topk", 0.2),("topk", 1),("topk", 2),("nucleus", 1)]
+    variationlist = [("topk", 0.2),("topk", 1),("topk", 2),("nucleus", 1), ("beam", 1)]
     for sampling_method , sampling_temp in variationlist:
 
-        model.sampling_temp = args.sampling_temp
-        model.sampling_method = args.sampling_method
+        model.sampling_temp = sampling_temp
+        model.sampling_method = sampling_method
         output_path = "./generated_sentences/"
         Path(output_path).mkdir(parents=True, exist_ok=True)
         out_file = args.exp_name +"_coco_" +str(sampling_method) +"_"+str(sampling_temp)+".json"
@@ -203,4 +203,7 @@ if os.path.exists(fname):
         print("Output path:", out_file)
 
         gen_captions(model, dict_dataloader_test, spec, tokenizerBW_dec, out_file)
+
+else:
+    print(" path doesn't exist:", fname)
 
