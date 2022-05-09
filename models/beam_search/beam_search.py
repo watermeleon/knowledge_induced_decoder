@@ -164,7 +164,7 @@ class BeamSearch(object):
             old_seq_logprob[:, :, 1:] = -999
             candidate_logprob = self.seq_mask * candidate_logprob + old_seq_logprob * (1 - self.seq_mask)
 
-        selected_idx, selected_logprob = self.select(t, candidate_logprob, **kwargs)
+        selected_idx, selected_logprob = self.select_sample(t, candidate_logprob, **kwargs)
         selected_beam = selected_idx  / candidate_logprob.shape[-1]
         error_marg = 1/(4*candidate_logprob.shape[-1])
         selected_beam += error_marg
