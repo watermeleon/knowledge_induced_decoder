@@ -173,7 +173,12 @@ else:
     fname = 'saved_models/%s_best.pth' % args.exp_name
 
 if os.path.exists(fname):
-    data = torch.load(fname,map_location=device)
+    if device == torch.device('cpu'):
+        print("on cpu")
+        data = torch.load(fname,map_location=device)
+    else:
+        data = torch.load(fname)
+
     torch.set_rng_state(data['torch_rng_state'])
     torch.cuda.set_rng_state(data['cuda_rng_state'])
     np.random.set_state(data['numpy_rng_state'])
