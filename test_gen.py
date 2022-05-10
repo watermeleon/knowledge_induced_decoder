@@ -1,4 +1,5 @@
 import os
+# os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import random
@@ -172,7 +173,7 @@ else:
     fname = 'saved_models/%s_best.pth' % args.exp_name
 
 if os.path.exists(fname):
-    data = torch.load(fname)
+    data = torch.load(fname,map_location=device)
     torch.set_rng_state(data['torch_rng_state'])
     torch.cuda.set_rng_state(data['cuda_rng_state'])
     np.random.set_state(data['numpy_rng_state'])
@@ -191,9 +192,9 @@ if os.path.exists(fname):
     dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size, num_workers=args.workers,shuffle=True)
 
     # Sampling options: ['topk', 'beam', 'nucleus'])
-    variationlist = [("nucleus", 1),("topk", 0.2),("topk", 1),("topk", 2), ("beam", 1)]
+    variationlist = [("nucleus", 1),("topk", 1), ("beam", 1)]
+    #  ("topk", 0.2),("topk", 2)]
     for sampling_method , sampling_temp in variationlist:
-
         model.sampling_temp = sampling_temp
         model.sampling_method = sampling_method
         output_path = "./generated_sentences/"

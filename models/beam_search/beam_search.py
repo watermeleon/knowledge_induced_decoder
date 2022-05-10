@@ -118,7 +118,8 @@ class BeamSearch(object):
             return self.select(t, candidate_logprob,  **kwargs)
         # print("doign whatev, royally fucked", self.sampling_method)
         candlog = candidate_logprob.view(self.b_s, -1)
-        samp_probs = F.softmax(candlog, dim=-1)
+        # samp_probs = F.softmax(candlog, dim=-1)
+        samp_probs = candlog.exp()
         samp_probs_orig = samp_probs.clone()
         if self.sampling_temp != 1:
             # sharpens peaks by lower temp
