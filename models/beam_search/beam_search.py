@@ -134,7 +134,7 @@ class BeamSearch(object):
             selected_logprob = samp_probs_orig.gather(1, selected_idx)
         elif self.sampling_method == "nucleus":
             # use nucleus sampling with fixed p
-            p = 0.9 
+            p = 0.7 
             sorted_probs, sorted_indices = torch.sort(samp_probs, descending=True)
             # sorted_orig_probs, _ = torch.sort(samp_probs, descending=True)
             sorted_logprobs, _ = torch.sort(candlog, descending=True)
@@ -149,7 +149,7 @@ class BeamSearch(object):
             sorted_indices_to_remove = cumulative_probs > p
 
             # always keep atleast the beamsearch most probable probs
-            sorted_indices_to_remove[:,:self.beam_size] = False
+            sorted_indices_to_remove[:,0] = False
 
             sorted_indices_to_remove[:, 1:] = sorted_indices_to_remove[:, :-1].clone()
             sorted_indices_to_remove[:, 0] = 0
