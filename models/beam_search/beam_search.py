@@ -136,7 +136,8 @@ class BeamSearch(object):
             # use nucleus sampling with fixed p
             p = 0.9 
             sorted_probs, sorted_indices = torch.sort(samp_probs, descending=True)
-            sorted_orig_probs, _ = torch.sort(samp_probs, descending=True)
+            # sorted_orig_probs, _ = torch.sort(samp_probs, descending=True)
+            sorted_logprobs, _ = torch.sort(candlog, descending=True)
 
             cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
             sorted_indices_to_remove = cumulative_probs > p
@@ -147,7 +148,7 @@ class BeamSearch(object):
 
             sorted_next_indices = sorted_samp_probs.multinomial(self.beam_size)
             selected_idx = sorted_indices.gather(1, sorted_next_indices)
-            selected_logprob = sorted_orig_probs.gather(1, sorted_next_indices).log()
+            selected_logprob = sorted_logprobs.gather(1, sorted_next_indices)
         return selected_idx, selected_logprob
 
     def iter(self, t: int, visual: utils.TensorOrSequence, contextfeat: utils.TensorOrSequence, outputs, return_probs, **kwargs):
