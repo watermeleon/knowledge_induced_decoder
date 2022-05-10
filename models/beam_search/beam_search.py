@@ -139,8 +139,18 @@ class BeamSearch(object):
             # sorted_orig_probs, _ = torch.sort(samp_probs, descending=True)
             sorted_logprobs, _ = torch.sort(candlog, descending=True)
 
+            # max_probs = sorted_probs.max(1).values
+            max_probs = sorted_probs.sum(1)
+            for i, maxprob in enumerate(max_probs):
+                sorted_probs[i] /= maxprob
+
             cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
+            # print(torch.sum(cumulative_probs[0]), torch.sum(cumulative_probs[1]), "firstlast:", cumulative_probs[0][0], cumulative_probs[0][-1])
             sorted_indices_to_remove = cumulative_probs > p
+
+            # always keep atleast the beamsearch most probable probs
+            sorted_indices_to_remove[:,:self.beam_size] = False
+
             sorted_indices_to_remove[:, 1:] = sorted_indices_to_remove[:, :-1].clone()
             sorted_indices_to_remove[:, 0] = 0
             sorted_samp_probs = sorted_probs.clone()
