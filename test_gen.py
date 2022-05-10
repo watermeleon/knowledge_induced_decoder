@@ -191,7 +191,7 @@ if os.path.exists(fname):
     dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size, num_workers=args.workers,shuffle=True)
 
     # Sampling options: ['topk', 'beam', 'nucleus'])
-    variationlist = [("topk", 0.2),("topk", 1),("topk", 2),("nucleus", 1), ("beam", 1)]
+    variationlist = [("nucleus", 1),("topk", 0.2),("topk", 1),("topk", 2), ("beam", 1)]
     for sampling_method , sampling_temp in variationlist:
 
         model.sampling_temp = sampling_temp
@@ -205,5 +205,5 @@ if os.path.exists(fname):
         gen_captions(model, dict_dataloader_test, spec, tokenizerBW_dec, out_file)
 
 else:
-    print(" path doesn't exist:", fname)
+    print("path doesn't exist:", fname)
 
