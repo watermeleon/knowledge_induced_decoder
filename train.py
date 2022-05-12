@@ -10,7 +10,7 @@ from data import ImageDetectionsField, TextField, RawField, ClipEmbDetectionsFie
 from data import COCO, DataLoader
 import evaluation
 from evaluation import PTBTokenizer, Cider
-from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder, PromptDecoder
+from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder, PromptDecoder , StackedPromptDecoder
 from knowgraph_conceptnet import KnowledgeGraph
 
 import torch
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     # parser.add_argument('--onlisa', type=str, default="True", choices=['True', 'False'])
     parser.add_argument('--seg_token', type=str, default="False", choices=['True', 'False'])
     parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb','clipemb_pretok'])
-    parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused', 'prompt_decoder'])
+    parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused', 'prompt_decoder', 'stacked'])
     parser.add_argument('--N_dec', type=int, default=3)
 
     parser.add_argument('--tokenizer', type=str, default="bert", choices=['bert', 'clip'])
@@ -150,9 +150,13 @@ if __name__ == '__main__':
     elif args.decoder == "prompt_decoder":
         print("using prompt dec")
         decoder = PromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)
+    elif args.decoder == "stacked":
+        print("using stacked decoder")
+        decoder = StackedPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)
     elif args.decoder == "vanilla":
-        decoder = VanillaDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, enc_model = args.enc_model)
-
+       print("using vanilla decoder")
+       decoder = VanillaDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, enc_model = args.enc_model)
+ 
     model = Transformer(spec['bos_tokenid'], encoder, decoder).to(device)
 
     dict_dataset_train = train_dataset.image_dictionary({'image': image_field, 'text': RawField(), "img_id": clipemb_field})
@@ -216,8 +220,8 @@ if __name__ == '__main__':
                                            num_workers=args.workers)
         dict_dataloader_val = DataLoader(dict_dataset_val, batch_size=args.batch_size // 5)
         dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size // 5)
-        # scores = evaluate_metrics(model, dict_dataloader_val, spec, transform_tok = tokenizerBW_dec)
-        # print("these scores be all like:", scores)
+        scores = evaluate_metrics(model, dict_dataloader_val, spec, transform_tok = tokenizerBW_dec)
+        print("these scores be all like:", scores)
         if not use_rl:
             train_loss = train_xe(model, dataloader_train, optim, spec, len(tokenizerBW))
             writer.add_scalar('data/train_loss', train_loss, e)
