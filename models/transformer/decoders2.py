@@ -143,7 +143,7 @@ class PromptDecoder(Module):
             visible_matrix_batch = visible_matrix_batch == 0
             seg_batch = seg_batch == 1
 
-            ksb_pad_mask = position_batch == 0
+            ksb_pad_mask = position_batch != 0
             ksb_pad_mask = ksb_pad_mask.unsqueeze(-1).float()
             # store the sizes of the sentence and the KG part
             max_pref = know_sent_batch.size(1)           
