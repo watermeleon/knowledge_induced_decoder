@@ -41,10 +41,8 @@ class PromptDecoderLayer(Module):
             kw_sent = input_sent
             ksb_outp = self.running_ksb_outp 
         else:
-            newlist = []
             for i in range(len(seg_batch)):
                 kws = know_sent_batch[i][seg_batch[i]] 
-                newlist.append(kws)
                 pad_kw_tensor[i,:kw_lengths[i]] = kws
 
             keywords = pad_kw_tensor
@@ -157,12 +155,11 @@ class PromptDecoder(Module):
             max_kw = max(kw_lengths)
             mask_kw = torch.zeros((b_s, max_kw),device=input.device)
             kw_len_dif = kw_lengths - max_kw 
+            # for each batch, set the right most to mask 1, if it is padded.
             for j, kw_len in enumerate(kw_len_dif):
                 for i in range(kw_len, 0):
                     mask_kw[j][i] = 1
-            sent_kw_mask = mask_kw.unsqueeze(1).repeat(1,seq_len,1).unsqueeze(1) # from shape (bs,kw) -> (bs, 1, seqlen, kw)
-
-
+            sent_kw_mask = mask_kw.unsqueeze(1).repeat(1,seq_len,1).unsqueeze(1) # from shape (bs,kw) -> (bs, 1, seqlen, kw) , this is for the sentence MSCA
 
 
         mask_queries = (input != self.padding_idx).unsqueeze(-1).float()  # (b_s, seq_len, 1)
