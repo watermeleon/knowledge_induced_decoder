@@ -8,8 +8,7 @@ import numpy as np
 from models.transformer.attention import MultiHeadAttention
 from models.transformer.utils import sinusoid_encoding_table, PositionWiseFeedForward
 from models.containers import Module, ModuleList
-# from ... import knowgraph_conceptnet 
-# from knowgraph_conceptnet import KnowledgeGraph
+
 import clip
 
 
@@ -157,6 +156,8 @@ class MeshedDecoder(Module):
             combi_mask = combi_mask.unsqueeze(1).gt(0).to(input.device)
             input = torch.cat((know_sent_batch, input) ,-1)
             seq = torch.cat((position_batch, seq),-1)
+            # dec1_mcombi_mask_0 = combi_mask[0]
+
         else:
             combi_mask = mask_self_attention
 

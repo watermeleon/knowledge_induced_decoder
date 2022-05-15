@@ -8,8 +8,6 @@ import numpy as np
 from models.transformer.attention import MultiHeadAttention
 from models.transformer.utils import sinusoid_encoding_table, PositionWiseFeedForward
 from models.containers import Module, ModuleList
-# from ... import knowgraph_conceptnet 
-import clip
 
 
 class DecoderLayer(Module):
@@ -110,8 +108,8 @@ class StackedPromptDecoder(Module):
             self.max_pref = max_pref
 
             # because keywords prompt can have variable size length due to tokenization, create mask so that kw tensor is of same size.
-            seg_batch_neg = ~seg_batch
-            kw_lengths = np.array([sum(map(int, segbatch_i)) for segbatch_i in seg_batch_neg])
+            seg_batch = ~seg_batch
+            kw_lengths = np.array([sum(map(int, segbatch_i)) for segbatch_i in seg_batch])
             max_kw = max(kw_lengths)
             mask_kw = torch.zeros((b_s, max_kw),device=input.device)
             kw_len_dif = kw_lengths - max_kw 
@@ -155,7 +153,8 @@ class StackedPromptDecoder(Module):
             top_row = torch.ones((b_s, 1, max_kw, seq_len), device=input.device)
             mask_self_att_sent = torch.cat((top_row, mask_self_attention_copy),-2)
             mask_self_att_sent = torch.cat((sent_kw_mask, mask_self_att_sent), -1).gt(0)
-            seg_batch = ~ seg_batch    # Invert seg_batch to find keywords
+            # mask_self_att_sent_0 = mask_self_att_sent[0]
+            # seg_batch = ~ seg_batch    # Invert seg_batch to find keywords
 
             if self._is_stateful:
                 self.running_mask_self_attention = torch.cat((mask_kw.unsqueeze(1).unsqueeze(1), mask_self_attention_copy), -1).gt(0)

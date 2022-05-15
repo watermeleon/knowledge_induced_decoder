@@ -28,7 +28,7 @@
             "request": "launch",
             "program": "train.py",
             "console": "integratedTerminal",
-            "args":["--exp_name" ,"vit_temp",  "--features_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_prepool.h5", "--annotation_folder", "./annotations",  "--contextfeat_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", "--feat_size", "768","--batch_size", "10",  "--decoder", "stacked", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT", "--start_rl", "--no_rel_label"]
+            "args":["--exp_name" ,"vit_temp",  "--features_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_prepool.h5", "--annotation_folder", "./annotations",  "--contextfeat_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", "--feat_size", "768","--batch_size", "10",  "--decoder", "stacked", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT",  "--no_rel_label"]
         }
 
         {
