@@ -14,7 +14,7 @@ from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecode
 from knowgraph_conceptnet import KnowledgeGraph
 
 import torch
-from torch.optim import Adam
+from torch.optim import Adam , AdamW
 from torch.optim.lr_scheduler import LambdaLR
 from torch.nn import NLLLoss
 from tqdm import tqdm
@@ -61,7 +61,10 @@ if __name__ == '__main__':
     parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb','clipemb_pretok'])
     parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused', 'prompt_decoder', 'stacked'])
     parser.add_argument('--N_dec', type=int, default=3)
+    parser.add_argument('--optimizer', type=str, default="adam", choices=['adam', 'adamW'])
 
+
+    parser.add_argument('--dropout', type=float, default=0.1)
     parser.add_argument('--tokenizer', type=str, default="bert", choices=['bert', 'clip'])
     parser.add_argument('--enc_model', type=str, default="ViT", choices=['ViT', 'rn50x4'])
     parser.add_argument('--pt_token_emb', action='store_true')
@@ -139,23 +142,23 @@ if __name__ == '__main__':
     inp_feat_size = args.feat_size
     print("size is of feats set :", args.feat_size)
     encoder = MemoryAugmentedEncoder(3, 0, d_in=inp_feat_size,  attention_module=ScaledDotProductAttention,
-                                     attention_module_kwargs={'m': args.m})
+                                     attention_module_kwargs={'m': args.m}, dropout=args.dropout)
 
     seg_token = args.seg_token == "True"
     knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw, norel= args.no_rel_label, only_l2r = args.rel_only_l2r)
 
     if args.decoder == "kg_infused":
         print("using normal dec")
-        decoder = MeshedDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)
+        decoder = MeshedDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout)
     elif args.decoder == "prompt_decoder":
         print("using prompt dec")
-        decoder = PromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)
+        decoder = PromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout)
     elif args.decoder == "stacked":
         print("using stacked decoder")
-        decoder = StackedPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)
+        decoder = StackedPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout)
     elif args.decoder == "vanilla":
        print("using vanilla decoder")
-       decoder = VanillaDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, enc_model = args.enc_model)
+       decoder = VanillaDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, enc_model = args.enc_model, dropout=args.dropout)
  
     model = Transformer(spec['bos_tokenid'], encoder, decoder).to(device)
 
@@ -172,7 +175,11 @@ if __name__ == '__main__':
         return (model.d_model ** -.5) * min(s ** -.5, s * warm_up ** -1.5)
 
     # Initial conditions
-    optim = Adam(model.parameters(), lr=1, betas=(0.9, 0.98))
+    if args.optimizer == "adamW":
+        optim = AdamW(model.parameters(), lr=1, betas=(0.9, 0.98))
+    else:
+        optim = Adam(model.parameters(), lr=1, betas=(0.9, 0.98))
+
     scheduler = LambdaLR(optim, lambda_lr)
     loss_fn = NLLLoss(ignore_index=spec['pad_tokenid'])
     # changed by leon
