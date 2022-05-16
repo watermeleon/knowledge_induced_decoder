@@ -33,7 +33,7 @@ def evaluate_metrics(model, dataloader, spec, transform_tok = None):
             context_feats = context_feats[:,0,:,:]
             images, context_feats = images.to(device), context_feats.to(device)
             with torch.no_grad():
-                out, _ = model.beam_search(images, context_feats, 40, spec['eos_tokenid'], 5, out_size=1)
+                out, _ = model.beam_search(images, context_feats, 20, spec['eos_tokenid'], 5, out_size=1)
 
             caps_gen = [transform_tok.decode(sent) for sent in out] 
             caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen]
@@ -86,7 +86,7 @@ def train_scst(model, dataloader, optim, cider, spec, transform_tok):
     running_reward_baseline = .0
     model.train()
     running_loss = .0
-    seq_len = 40
+    seq_len = 20
     beam_size = 5
     print("trainin SCTS")
     with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=spec['tdqm_disable']) as pbar:
