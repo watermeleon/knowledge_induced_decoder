@@ -42,8 +42,7 @@ exec(open("training_functions.py").read())
 
 
 if __name__ == '__main__':
-    device = torch.device('cuda')
-
+    # device = torch.device('cuda')
     # device = torch.device('cpu')
     parser = argparse.ArgumentParser(description='Meshed-Memory Transformer')
     parser.add_argument('--exp_name', type=str, default='m2_transformer')
@@ -56,6 +55,9 @@ if __name__ == '__main__':
     parser.add_argument('--resume_best', action='store_true')
     parser.add_argument('--features_path', type=str)
     parser.add_argument('--contextfeat_path', type=str)
+    parser.add_argument('--device', type=str, default="cuda", choices=['cuda', 'cpu'])
+
+
     # parser.add_argument('--onlisa', type=str, default="True", choices=['True', 'False'])
     parser.add_argument('--seg_token', type=str, default="False", choices=['True', 'False'])
     parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb','clipemb_pretok'])
@@ -69,8 +71,10 @@ if __name__ == '__main__':
     parser.add_argument('--enc_model', type=str, default="ViT", choices=['ViT', 'rn50x4'])
     parser.add_argument('--pt_token_emb', action='store_true')
     parser.add_argument('--start_rl', action='store_true')
+    parser.add_argument('--no_rl', action='store_true')
+
+
     parser.add_argument('--only_kw', action='store_true')
-    
     parser.add_argument('--no_rel_label', action='store_true')
     parser.add_argument('--rel_only_l2r', action='store_true')
 
@@ -88,6 +92,7 @@ if __name__ == '__main__':
     print(args)
 
     print('KG context Transformer Training')
+    device = torch.device(args.device)
 
 
 
@@ -312,6 +317,6 @@ if __name__ == '__main__':
         if best:
             copyfile('saved_models/%s_last.pth' % args.exp_name, 'saved_models/%s_best.pth' % args.exp_name)
 
-        if exit_train:
+        if (switch_to_rl and args.no_rl )or exit_train:
             writer.close()
             break
