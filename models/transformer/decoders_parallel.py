@@ -138,7 +138,7 @@ class PromptDecoder(Module):
 
         if self.stateful_1 == 0:
             with torch.no_grad():
-                know_sent_batch, position_batch, visible_matrix_batch, seg_batch = self.KG.get_vm_from_imgid(contextfeat)
+                know_sent_batch, position_batch, visible_matrix_batch, seg_batch, _ = self.KG.get_vm_from_imgid(contextfeat)
             visible_matrix_batch = visible_matrix_batch == 0
             seg_batch = seg_batch == 1
 

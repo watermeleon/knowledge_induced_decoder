@@ -189,6 +189,7 @@ class KnowledgeGraph(object):
         visible_matrix_batch = []
         seg_batch = []
         sent_sizes = []
+        first_kw_tok = []
         for sent_it, split_sent in enumerate(split_sent_batch):
             # create tree
             sent_tree = []
@@ -199,6 +200,7 @@ class KnowledgeGraph(object):
             abs_idx = -1        # the idx of a token in the list
             abs_idx_src = []    # stores the idx of the keywords    
             num_toks = 0
+            pos_idx_kw_start = [abs_idx + 1]
 
             split_sent_vanilla = sent_batch[sent_it]
             for token_it, token in enumerate(split_sent):    
@@ -244,6 +246,9 @@ class KnowledgeGraph(object):
                 abs_idx_tree.append((token_abs_idx, entities_abs_idx))
                 abs_idx_src += token_abs_idx
 
+                pos_idx_kw_start.append( abs_idx +1)
+
+            first_kw_tok.append(pos_idx_kw_start[:-1])  # drop the last because it is where a (nonexisting) following kw would start
             # Get know_sent and pos
             know_sent = []
             pos = []
@@ -306,5 +311,5 @@ class KnowledgeGraph(object):
         
         maxlen = max(sent_sizes)
 
-        return torch.tensor(np.array(know_sent_batch)).to(self.device)[:,:maxlen], torch.tensor(np.array(position_batch)).to(self.device)[:,:maxlen], torch.tensor(np.array(visible_matrix_batch)).to(self.device)[:,:maxlen,:maxlen], torch.tensor(np.array(seg_batch)).to(self.device)[:,:maxlen]
+        return torch.tensor(np.array(know_sent_batch)).to(self.device)[:,:maxlen], torch.tensor(np.array(position_batch)).to(self.device)[:,:maxlen], torch.tensor(np.array(visible_matrix_batch)).to(self.device)[:,:maxlen,:maxlen], torch.tensor(np.array(seg_batch)).to(self.device)[:,:maxlen], np.array(first_kw_tok)
 

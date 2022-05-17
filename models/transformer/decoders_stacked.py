@@ -47,7 +47,7 @@ class DecoderLayer(Module):
 
 class StackedPromptDecoder(Module):
     def __init__(self, vocab_size, max_len, N_dec, padding_idx, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1,
-                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False):
+                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False, one_kw_token = False):
         super(StackedPromptDecoder, self).__init__()
         self.d_model = d_model
 
@@ -79,7 +79,8 @@ class StackedPromptDecoder(Module):
         
         kw_tokens = 15
         self.pos_start_sent =  kw_tokens + KG.first_pos_idx
-        
+        self.one_kw_token = one_kw_token
+
     
 
     def forward(self, input, encoder_output, mask_encoder, contextfeat):
@@ -96,7 +97,7 @@ class StackedPromptDecoder(Module):
 
         if self.stateful_1 == 0:
             with torch.no_grad():
-                know_sent_batch, position_batch, visible_matrix_batch, seg_batch = self.KG.get_vm_from_imgid(contextfeat)
+                know_sent_batch, position_batch, visible_matrix_batch, seg_batch, first_kw_tok = self.KG.get_vm_from_imgid(contextfeat)
             visible_matrix_batch = visible_matrix_batch == 0
             seg_batch = seg_batch == 1
 
@@ -107,8 +108,15 @@ class StackedPromptDecoder(Module):
             max_pref = know_sent_batch.size(1)           
             self.max_pref = max_pref
 
-            # because keywords prompt can have variable size length due to tokenization, create mask so that kw tensor is of same size.
             seg_batch = ~seg_batch
+            # if we only want the first token of each kw, change the segbatch
+            if self.one_kw_token:
+                seg_batch = torch.zeros_like(seg_batch)
+                for i, kw_idx in enumerate(first_kw_tok):
+                    seg_batch[i][kw_idx] = 1
+                seg_batch = seg_batch == 1
+
+            # because keywords prompt can have variable size length due to tokenization, create mask so that kw tensor is of same size.
             kw_lengths = np.array([sum(map(int, segbatch_i)) for segbatch_i in seg_batch])
             max_kw = max(kw_lengths)
             mask_kw = torch.zeros((b_s, max_kw),device=input.device)
@@ -140,9 +148,6 @@ class StackedPromptDecoder(Module):
             seq = self.running_seq + self.pos_start_sent
             self.running_seq.add_(1)
 
-            # if self.stateful_1 == 1:
-            #     self.running_mask_self_attention = torch.cat((sent_kw_mask, mask_self_att_sent), -1).gt(0)
-
         wordemb = self.word_emb(input)
         posemb = self.pos_emb(seq)
         sent_out =  wordemb + posemb 
@@ -153,8 +158,6 @@ class StackedPromptDecoder(Module):
             top_row = torch.ones((b_s, 1, max_kw, seq_len), device=input.device)
             mask_self_att_sent = torch.cat((top_row, mask_self_attention_copy),-2)
             mask_self_att_sent = torch.cat((sent_kw_mask, mask_self_att_sent), -1).gt(0)
-            # mask_self_att_sent_0 = mask_self_att_sent[0]
-            # seg_batch = ~ seg_batch    # Invert seg_batch to find keywords
 
             if self._is_stateful:
                 self.running_mask_self_attention = torch.cat((mask_kw.unsqueeze(1).unsqueeze(1), mask_self_attention_copy), -1).gt(0)
@@ -171,13 +174,17 @@ class StackedPromptDecoder(Module):
             pad_kw_tensor = pad_emb.clone().detach().repeat(b_s, max_kw, 1)
             visible_matrix_batch = visible_matrix_batch.unsqueeze(1)
 
-        # if self.stateful_1 < 2:
             for i, l in enumerate(self.layers_prompt):                    
                 ksb_out = l(ksb_out, encoder_output, ksb_pad_mask, visible_matrix_batch, mask_encoder)
 
-            for i in range(len(seg_batch)):
-                kws = ksb_out[i][seg_batch[i]] 
-                pad_kw_tensor[i,:kw_lengths[i]] = kws
+            if self.one_kw_token :
+                pad_kw_tensor = pad_kw_tensor[:,:self.KG.kw_size]
+                for i, kw_idx in enumerate(first_kw_tok):
+                    pad_kw_tensor[i] = ksb_out[i][kw_idx]
+            else:
+                for i in range(len(seg_batch)):
+                    kws = ksb_out[i][seg_batch[i]] 
+                    pad_kw_tensor[i,:kw_lengths[i]] = kws
             keywords_output = pad_kw_tensor
             sent_out = torch.cat((keywords_output, sent_out), 1)
             
