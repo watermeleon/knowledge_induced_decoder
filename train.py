@@ -10,7 +10,7 @@ from data import ImageDetectionsField, TextField, RawField, ClipEmbDetectionsFie
 from data import COCO, DataLoader
 import evaluation
 from evaluation import PTBTokenizer, Cider
-from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder, PromptDecoder , StackedPromptDecoder
+from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder, ParallelPromptDecoder , StackedPromptDecoder
 from knowgraph_conceptnet import KnowledgeGraph
 
 import torch
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     
     parser.add_argument('--N_dec', type=int, default=3)
     parser.add_argument('--seg_token', type=str, default="False", choices=['True', 'False'])
-    parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused', 'prompt_decoder', 'stacked'])
+    parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused', 'parallel', 'stacked'])
     parser.add_argument('--one_kw_token', action='store_true') # for the stackeddecoder
 
     # training specifics
@@ -158,9 +158,9 @@ if __name__ == '__main__':
     if args.decoder == "kg_infused":
         print("using normal dec")
         decoder = MeshedDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout)
-    elif args.decoder == "prompt_decoder":
-        print("using prompt dec")
-        decoder = PromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout)
+    elif args.decoder == "parallel":
+        print("using parallel dec")
+        decoder = ParallelPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout)
     elif args.decoder == "stacked":
         print("using stacked decoder")
         decoder = StackedPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, one_kw_token=args.one_kw_token)
