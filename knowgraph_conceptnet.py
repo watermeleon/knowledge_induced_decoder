@@ -36,6 +36,8 @@ class KnowledgeGraph(object):
         self.device = device
         self.norel = norel
         self.only_l2r = only_l2r
+        self.tokenizer_dec = tokenizer
+
 
         # max num related words is 5 + relationship label  = 6, but make 8 to binary reasons?
         self.first_pos_idx = 8
@@ -118,6 +120,7 @@ class KnowledgeGraph(object):
             else:
                 combitoks = ent[0] + ent[1]
             combitoklist.append(combitoks)
+            # print("entities:", self.tokenizer_dec.decode(combitoks))
             order_rel.append(ent[2])
 
         return combitoklist , order_rel
@@ -203,8 +206,9 @@ class KnowledgeGraph(object):
             pos_idx_kw_start = [abs_idx + 1]
 
             split_sent_vanilla = sent_batch[sent_it]
-            for token_it, token in enumerate(split_sent):    
+            for token_it, token in enumerate(split_sent):  
                 unigram = split_sent_vanilla[token_it]
+                # print("keyword:", unigram )  
                 entities,  order_rel = [], []
                 if not self.only_kw:
                     if str(unigram) not in self.special_tags:
