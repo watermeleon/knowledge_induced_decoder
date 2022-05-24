@@ -6,7 +6,7 @@ from data import ImageDetectionsField, TextField, RawField, ClipEmbDetectionsFie
 from data import COCO, DataLoader
 import evaluation
 # from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory
-from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder, PromptDecoder
+from models.transformer import Transformer, MemoryAugmentedEncoder, PromptDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder, ParallelPromptDecoder , StackedPromptDecoder
 from knowgraph_conceptnet import KnowledgeGraph
 from transformers import CLIPTokenizer, CLIPTokenizerFast, AutoTokenizer
 
@@ -55,20 +55,16 @@ def predict_captions(model, dataloader, spec, transform_tok):
 
 
 if __name__ == '__main__':
-    device = torch.device('cuda')
-    # device = torch.device('cpu')
 
-    parser = argparse.ArgumentParser(description='Meshed-Memory Transformer')
+    parser = argparse.ArgumentParser(description='PromptDecoder - KG- Transformer')
 
     # training basics
-    parser.add_argument('--exp_name', type=str, default='m2_transformer')
+    parser.add_argument('--exp_name', type=str, default='kg_prompt_transformer')
     parser.add_argument('--batch_size', type=int, default=10)
     parser.add_argument('--workers', type=int, default=0)
     parser.add_argument('--m', type=int, default=40)
     parser.add_argument('--head', type=int, default=8)
     parser.add_argument('--warmup', type=int, default=10000)
-    # parser.add_argument('--resume_last', action='store_true')
-    # parser.add_argument('--resume_best', action='store_true')
     parser.add_argument('--resume', type=str, default="best", choices=['best', 'last'])
 
     parser.add_argument('--device', type=str, default="cuda", choices=['cuda', 'cpu'])
@@ -81,7 +77,6 @@ if __name__ == '__main__':
     parser.add_argument('--logs_folder', type=str, default='tensorboard_logs')
 
     # encoder and decoder
-    parser.add_argument('--d_att', type=int, default=64)
     parser.add_argument('--dropout', type=float, default=0.1)
     parser.add_argument('--enc_model', type=str, default="ViT", choices=['ViT', 'rn50x4'])
     
@@ -112,6 +107,7 @@ if __name__ == '__main__':
     print(args)
     print('Meshed-Memory Transformer Evaluation')
     print('path', args.features_path)
+    device = torch.device(args.device)
 
 
     # load transformer numericalizer/tokenizer
@@ -165,18 +161,23 @@ if __name__ == '__main__':
     inp_feat_size = args.feat_size
     print("size is of feats set :", args.feat_size)
     encoder = MemoryAugmentedEncoder(3, 0, d_in=inp_feat_size,  attention_module=ScaledDotProductAttention,
-                                     attention_module_kwargs={'m': args.m})
+                                     attention_module_kwargs={'m': args.m}, dropout=args.dropout, d_model = args.d_model, h=args.head)
 
     seg_token = args.seg_token == "True"
     knowledge_graph = KnowledgeGraph(tokenizer = tokenizerBW_dec, transform_tok = tokenizerBW, device = device, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model)
 
     if args.decoder == "kg_infused":
-        decoder = MeshedDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)
-    elif args.decoder == "prompt_decoder":
-        decoder = PromptDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb)
+        print("using normal dec")
+        decoder = PromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'],h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)
+    elif args.decoder == "parallel":
+        print("using parallel dec")
+        decoder = ParallelPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)
+    elif args.decoder == "stacked":
+        print("using stacked decoder")
+        decoder = StackedPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, one_kw_token=args.one_kw_token, d_model = args.d_model)
     elif args.decoder == "vanilla":
-        decoder = VanillaDecoder(len(tokenizerBW), 128, 3, spec['pad_tokenid'], d_k=args.d_att, d_v=args.d_att, enc_model = args.enc_model)
-
+       print("using vanilla decoder")
+       decoder = VanillaDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, enc_model = args.enc_model, dropout=args.dropout, d_model = args.d_model)
     model = Transformer(spec['bos_tokenid'], encoder, decoder).to(device)
     model.sampling_temp = args.sampling_temp
     model.sampling_method = args.sampling_method

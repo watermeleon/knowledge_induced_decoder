@@ -10,7 +10,7 @@ from data import ImageDetectionsField, TextField, RawField, ClipEmbDetectionsFie
 from data import COCO, DataLoader
 import evaluation
 from evaluation import PTBTokenizer, Cider
-from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder, ParallelPromptDecoder , StackedPromptDecoder
+from models.transformer import Transformer, MemoryAugmentedEncoder, PromptDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder, ParallelPromptDecoder , StackedPromptDecoder
 from knowgraph_conceptnet import KnowledgeGraph
 
 import torch
@@ -44,10 +44,10 @@ exec(open("training_functions.py").read())
 if __name__ == '__main__':
     # device = torch.device('cuda')
     # device = torch.device('cpu')
-    parser = argparse.ArgumentParser(description='Meshed-Memory Transformer')
+    parser = argparse.ArgumentParser(description='PromptDecoder - KG- Transformer')
 
     # training basics
-    parser.add_argument('--exp_name', type=str, default='m2_transformer')
+    parser.add_argument('--exp_name', type=str, default='kg_prompt_transformer')
     parser.add_argument('--batch_size', type=int, default=10)
     parser.add_argument('--workers', type=int, default=0)
     parser.add_argument('--m', type=int, default=40)
@@ -158,7 +158,7 @@ if __name__ == '__main__':
 
     if args.decoder == "kg_infused":
         print("using normal dec")
-        decoder = MeshedDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'],h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)
+        decoder = PromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'],h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)
     elif args.decoder == "parallel":
         print("using parallel dec")
         decoder = ParallelPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)

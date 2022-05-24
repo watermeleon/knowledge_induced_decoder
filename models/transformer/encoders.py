@@ -35,18 +35,8 @@ class MultiLevelEncoder(nn.Module):
         self.padding_idx = padding_idx
 
     def forward(self, input, attention_weights=None):
-        # input (b_s, seq_len, d_in)
-        # print("inputy:", input, input.size(), "paddin idx", self.padding_idx)
-        # suminp = torch.sum(input, -1)
-        # print("suminp:", suminp)
-        # for i, uminpi in enumerate(suminp):
-        #     for j, featj in enumerate(uminpi):
-        #         print("featj", featj)
-        #         if featj == 0:
-        #             print("i, umpi", i,uminpi)
-        #             print("real tensor:", input[i][j], torch.sum(input[i][j]))
+
         attention_mask = (torch.sum(input, -1) == self.padding_idx).unsqueeze(1).unsqueeze(1)  # (b_s, 1, 1, seq_len)
-        # print("attention mask:", attention_mask, attention_mask.size())
         outs = []
         out = input
         for l in self.layers:
