@@ -42,8 +42,7 @@ exec(open("training_functions.py").read())
 
 
 if __name__ == '__main__':
-    # device = torch.device('cuda')
-    # device = torch.device('cpu')
+
     parser = argparse.ArgumentParser(description='PromptDecoder - KG- Transformer')
 
     # training basics
@@ -69,6 +68,8 @@ if __name__ == '__main__':
     parser.add_argument('--enc_model', type=str, default="ViT", choices=['ViT', 'rn50x4'])
     
     parser.add_argument('--N_dec', type=int, default=3)
+    parser.add_argument('--N_enc', type=int, default=3)
+
     parser.add_argument('--d_model', type=int, default=512)
 
     parser.add_argument('--seg_token', type=str, default="False", choices=['True', 'False'])
@@ -150,7 +151,7 @@ if __name__ == '__main__':
     # Model and dataloaders
     inp_feat_size = args.feat_size
     print("size is of feats set :", args.feat_size)
-    encoder = MemoryAugmentedEncoder(3, 0, d_in=inp_feat_size,  attention_module=ScaledDotProductAttention,
+    encoder = MemoryAugmentedEncoder(args.N_enc, 0, d_in=inp_feat_size,  attention_module=ScaledDotProductAttention,
                                      attention_module_kwargs={'m': args.m}, dropout=args.dropout, d_model = args.d_model, h=args.head)
 
     seg_token = args.seg_token == "True"
