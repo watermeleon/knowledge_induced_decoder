@@ -63,24 +63,6 @@ class RawField(object):
         return default_collate(batch)
 
 
-# class Merge(RawField):
-#     def __init__(self, *fields):
-#         super(Merge, self).__init__()
-#         self.fields = fields
-
-#     def preprocess(self, x):
-#         return tuple(f.preprocess(x) for f in self.fields)
-
-#     def process(self, batch, *args, **kwargs):
-#         if len(self.fields) == 1:
-#             batch = [batch, ]
-#         else:
-#             batch = list(zip(*batch))
-
-#         out = list(f.process(b, *args, **kwargs) for f, b in zip(self.fields, batch))
-#         return out
-
-
 class ImageDetectionsField(RawField):
     def __init__(self, preprocessing=None, postprocessing=None, detections_path=None, max_detections=100,
                  sort_by_prob=False, load_in_tmp=True,print_img_name = False):
@@ -152,9 +134,6 @@ class ClipEmbDetectionsField(RawField):
             else:
                 self.detections_path = tmp_detections_path
 
-        # with open(detections_path, 'rb') as pth:
-        #     self.detect_pickle = pickle.load(pth)
-
         super(ClipEmbDetectionsField, self).__init__(preprocessing, postprocessing)
 
     def preprocess(self, x, avoid_precomp=False):
@@ -165,19 +144,11 @@ class ClipEmbDetectionsField(RawField):
         try:
             f = h5py.File(self.detections_path, 'r')
             precomp_data = f['%d_features' % image_id][()]
-            # precomp_data = self.detect_pickle['%d_features' % image_id]
-            # print("precomp data is:", precomp_data, np.array(precomp_data).shape)
             if self.sort_by_prob:
                 precomp_data = precomp_data[np.argsort(np.max(f['%d_cls_prob' % image_id][()], -1))[::-1]]
         except KeyError:
             warnings.warn('Could not find detections for %d' % image_id)
             precomp_data = np.random.rand(10,512)
-
-        # delta = self.max_detections - precomp_data.shape[0]
-        # if delta > 0:
-        #     precomp_data = np.concatenate([precomp_data, np.zeros((delta, precomp_data.shape[1]))], axis=0)
-        # elif delta < 0:
-        #     precomp_data = precomp_data[:self.max_detections]
 
         return precomp_data.astype(np.float32)
 
@@ -226,7 +197,7 @@ class TextField(RawField):
         self.vocab = None
         self.vectors = vectors
         self.transform_tok = transform_tok
-        # self.pad_id = 0
+
         if self.transform_tok is not None:
             self.transform_pad_id = transform_tok.encode(transform_tok.pad_token)[1]
 
@@ -328,7 +299,6 @@ class TextField(RawField):
                              "input data is not a tuple of "
                              "(data batch, batch lengths).")
         
-        # print("arr is:", arr)
         if isinstance(arr, tuple):
             arr, lengths = arr
             lengths = torch.tensor(lengths, dtype=self.dtype, device=device)
@@ -343,8 +313,6 @@ class TextField(RawField):
                 
                 arr = [ self.transform_tok(" ".join(sent)).input_ids for sent in arr] 
                 # remove the padding that is between word and EOS token:
-                # print(arr)
-                # print(repr(arr))
                 arr1 = [list(filter(lambda a: a != self.transform_pad_id, x)) for x in arr]
                 arr = arr1
 
@@ -358,7 +326,6 @@ class TextField(RawField):
                     newarr.append(sent)
                 arr = newarr
                 var = torch.tensor(arr, dtype=self.dtype, device=device)
-                # print("var is:", var)
         else:
             if self.vectors:
                 arr = [[self.vectors[x] for x in ex] for ex in arr]
@@ -380,7 +347,6 @@ class TextField(RawField):
 
             var = torch.cat([torch.cat([a.unsqueeze(0) for a in ar]).unsqueeze(0) for ar in arr])
 
-        # var = torch.tensor(arr, dtype=self.dtype, device=device)
         if not self.batch_first:
             var.t_()
         var = var.contiguous()

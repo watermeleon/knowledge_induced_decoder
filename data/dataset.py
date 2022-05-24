@@ -4,7 +4,6 @@ import itertools
 import collections
 import torch
 
-# from data.field import RawField
 from .example import Example
 from .utils import nostdout
 from pycocotools.coco import COCO as pyCOCO
@@ -18,10 +17,8 @@ class Dataset(object):
     def __init__(self, examples, fields):
         self.examples = examples
         self.fields = dict(fields)
-        # print("examples is:", examples)
     def collate_fn(self):
         def collate(batch):
-            # print("heyhoi")
             if len(self.fields) == 1:
                 batch = [batch, ]
             else:
@@ -152,9 +149,6 @@ class PairedDataset(Dataset):
         assert ('image' in fields)
         assert ('text' in fields)
         super(PairedDataset, self).__init__(examples, fields)
-        # print("in paired, Dataset type:", type(Dataset()))
-        # print("option2:", Dataset().__class__.__name__)
-        # print("Is Dataset it an IterableDat?", isinstance(Dataset, IterableDataset))
 
         self.image_field = self.fields['image']
         self.text_field = self.fields['text']
@@ -230,7 +224,6 @@ class COCO(PairedDataset):
 
         with nostdout():
             self.train_examples, self.val_examples, self.test_examples = self.get_samples(roots, ids)
-        # print("these are train samples:",len(self.train_examples))
         examples = self.train_examples + self.val_examples + self.test_examples
         super(COCO, self).__init__(examples, {'image': image_field, 'text': text_field, "img_id":cocoid_field})
 
@@ -239,8 +232,6 @@ class COCO(PairedDataset):
         train_split = PairedDataset(self.train_examples, self.fields)
         val_split = PairedDataset(self.val_examples, self.fields)
         test_split = PairedDataset(self.test_examples, self.fields)
-        # print("Is PairedDataset it an IterableDat?", isinstance(PairedDataset, IterableDataset))
-
         return train_split, val_split, test_split
 
     @classmethod
@@ -280,7 +271,6 @@ class COCO(PairedDataset):
                 caption = coco.anns[ann_id]['caption']
                 img_id = coco.anns[ann_id]['image_id']
                 filename = coco.loadImgs(img_id)[0]['file_name']
-                # print("img_id", img_id, filename, img_id, type(img_id))
 
                 example = Example.fromdict({'image': os.path.join(img_root, filename), 'text': caption, 'img_id' : img_id})
 
