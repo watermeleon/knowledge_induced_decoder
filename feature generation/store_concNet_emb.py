@@ -1,13 +1,13 @@
-
-# from knowgraph_conceptnet import KnowledgeGraph
-# from data.utils import *
+"""
+From the nested concnet dict: ass_onlyenglish.csv
+Store the embeddings of each word in the English only ConceptNet.
+outfile: dict[concept_word] = concept_embedding
+"""
 import numpy as np
-# from scipy import spatial
-
 from transformers import CLIPTextModel, CLIPTokenizer, CLIPModel
 import pickle
 import torch
-# from transformers import AutoTokenizer
+
 import csv
 from collections import defaultdict
 import clip

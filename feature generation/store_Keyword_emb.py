@@ -1,3 +1,9 @@
+
+"""
+From the file of keywords: openwebtext_10th.csv
+Store the embeddings of each keyword as a dict of two entries: {"captions": keywords, "clip_embedding": embedding_list}
+Use the already computed embeddings from the concNet if available: conceptNet_embedding_rn50x4.pkl"
+"""
 import numpy as np
 
 from transformers import CLIPTextModel, CLIPTokenizer, CLIPModel
