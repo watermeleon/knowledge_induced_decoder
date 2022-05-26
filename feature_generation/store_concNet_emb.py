@@ -7,7 +7,7 @@ import numpy as np
 from transformers import CLIPModel, CLIPTokenizerFast
 import pickle
 import torch
-import tqdm as tqdm
+from tqdm import tqdm
 
 import csv
 from collections import defaultdict
