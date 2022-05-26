@@ -28,10 +28,3 @@ To run our model, run either `parse_coco_dynamic.py` or `parse_nocaps_dynamic.py
 6. Store all the keyword embeddings, uses the overlap of already stored CN embeddings: 
     - `python store_Keyword_emb.py`
 
-
-| Argument | Possible values |
-|------|------|
-| `--batch_size` | Batch size (default: 10) |
-| `--workers` | Number of workers (default: 0) |
-| `--features_path` | Path to detection features file |
-| `--annotation_folder` | Path to folder with COCO annotations |
