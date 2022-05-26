@@ -61,7 +61,7 @@ def remove_duplicate_rc(lookupdict):
             stored_rel_concepts.append(rel_concept)
             stored_items.append(item)
         lookupdict2[k] = stored_items
-
+    return lookupdict2
 
 
 def parse_rel_label(lookupdict):
