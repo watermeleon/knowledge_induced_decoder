@@ -8,7 +8,7 @@
             "request": "launch",
             "program": "test.py",
             "console": "integratedTerminal",
-            "args":["--exp_name" ,"vit_dec_newpos1_t2",  "--features_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_prepool.h5", "--annotation_folder", "./annotations",  "--contextfeat_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", "--feat_size", "768","--batch_size", "2",  "--decoder", "kg_infused", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT", "--resume", "best"]
+            "args":["--exp_name" ,"vit_dec_newpos1_t2",  "--features_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_prepool.h5", "--annotation_folder", "./annotations",  "--contextfeat_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", "--feat_size", "768","--batch_size", "2",  "--decoder", "kg_infused", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT", "--resume", "best","--device", "cpu"]
         }
 
         {
@@ -17,7 +17,7 @@
             "request": "launch",
             "program": "test_gen.py",
             "console": "integratedTerminal",
-            "args":["--exp_name" ,"vit_norel_l2r",  "--features_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_prepool.h5", "--annotation_folder", "./annotations",  "--contextfeat_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", "--feat_size", "768","--batch_size", "2",  "--decoder", "kg_infused", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT", "--resume", "best", "--no_rel_label", "--rel_only_l2r"]
+            "args":["--exp_name" ,"vit_norel_l2r",  "--features_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_prepool.h5", "--annotation_folder", "./annotations",  "--contextfeat_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", "--feat_size", "768","--batch_size", "2",  "--decoder", "kg_infused", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT", "--resume", "best", "--no_rel_label", "--rel_only_l2r", "--device", "cpu"]
         }
 
 
