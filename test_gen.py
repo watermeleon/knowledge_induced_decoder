@@ -59,14 +59,13 @@ def gen_captions(model, dataloader, spec, transform_tok, out_file):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='PromptDecoder - KG- Transformer')
-   # training basics
+     # training basics
     parser.add_argument('--exp_name', type=str, default='kg_prompt_transformer')
     parser.add_argument('--batch_size', type=int, default=10)
     parser.add_argument('--workers', type=int, default=0)
     parser.add_argument('--m', type=int, default=40)
     parser.add_argument('--head', type=int, default=8)
     parser.add_argument('--warmup', type=int, default=10000)
-
     parser.add_argument('--resume', type=str, default="best", choices=['best', 'last'])
 
     parser.add_argument('--device', type=str, default="cuda", choices=['cuda', 'cpu'])
@@ -86,6 +85,7 @@ if __name__ == '__main__':
     parser.add_argument('--seg_token', type=str, default="False", choices=['True', 'False'])
     parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused', 'prompt_decoder', 'stacked'])
     parser.add_argument('--one_kw_token', action='store_true') # for the stackeddecoder
+    parser.add_argument('--d_model', type=int, default=512)
 
     # training specifics
     parser.add_argument('--start_rl', action='store_true')
@@ -111,23 +111,17 @@ if __name__ == '__main__':
     print('path', args.features_path)
     device = torch.device(args.device)
 
-    # load transformer numericalizer/tokenizer
+      # load transformer numericalizer/tokenizer
     if args.tokenizer == "bert":
         tokenizerBW = AutoTokenizer.from_pretrained("bert-base-uncased")
     elif args.tokenizer == "clip":
-        tokenizerBW =  CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32", pad_token = "[PAD]")
-        tokenizerBW_dec =  CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32", pad_token = "[PAD]")
+        tokenizerBW =  CLIPTokenizerFast.from_pretrained("./models/tokenizers_stored/CLIPTokenizerFast")
+        tokenizerBW_dec =  CLIPTokenizer.from_pretrained("./models/tokenizers_stored/CLIPTokenizer")
     else:
         print("ERROR: unrecogniezed transformer tokenizer:", args.tokenizer)
 
-
     print("size tokenizer:", len(tokenizerBW))
-    allrel = ['<|Antonym|>', '<|AtLocation|>', '<|CapableOf|>', '<|Causes|>', '<|CausesDesire|>', '<|CreatedBy|>', '<|DefinedAs|>', '<|DerivedFrom|>', '<|Desires|>', '<|DistinctFrom|>', '<|Entails|>', '<|EtymologicallyDerivedFrom|>', '<|EtymologicallyRelatedTo|>', '<|FormOf|>', '<|HasA|>', '<|HasContext|>', '<|HasFirstSubevent|>', '<|HasLastSubevent|>', '<|HasPrerequisite|>', '<|HasProperty|>', '<|HasSubevent|>', '<|InstanceOf|>', '<|IsA|>', '<|LocatedNear|>', '<|MadeOf|>', '<|MannerOf|>', '<|MotivatedByGoal|>', '<|NotCapableOf|>', '<|NotDesires|>', '<|NotHasProperty|>', '<|PartOf|>', '<|ReceivesAction|>', '<|RelatedTo|>', '<|SimilarTo|>', '<|SymbolOf|>', '<|Synonym|>', '<|UsedFor|>', '<|capital|>', '<|field|>', '<|genre|>', '<|genus|>', '<|influencedBy|>', '<|knownFor|>', '<|language|>', '<|leader|>', '<|occupation|>', '<|product|>']
-    allrel = [ftfy.fix_text(rel) for rel in allrel]
 
-    tokenizerBW.add_tokens(allrel, special_tokens=True)
-    if args.tokenizer == "clip":
-        tokenizerBW_dec.add_tokens(allrel, special_tokens=True)
 
     # initialize training specifications
     cls_tok = tokenizerBW.cls_token
