@@ -7,6 +7,7 @@ import numpy as np
 from transformers import CLIPModel, CLIPTokenizerFast
 import pickle
 import torch
+import tqdm as tqdm
 
 import csv
 from collections import defaultdict
@@ -26,6 +27,8 @@ def store_conceptnet_embeddings(clipmodel_name, args):
         conc_two = str(row[3].split("/")[3]).replace("_", " ")
         all_conceptnetwords.add(conc_one)
         all_conceptnetwords.add(conc_two)
+
+    all_conceptnetwords = list(all_conceptnetwords)    
     print(len(all_conceptnetwords))
 
     # device = torch.device('cpu')
@@ -39,7 +42,9 @@ def store_conceptnet_embeddings(clipmodel_name, args):
 
     word_prefix = ""
 
-    for word_list in all_conceptnetwords:
+    # for word_list in all_conceptnetwords:
+    for j in tqdm(range(len(all_conceptnetwords))):
+        word_list = all_conceptnetwords[j]
         word = word_prefix + word_list
         # word = "golden gate bridge"
         with torch.no_grad():
