@@ -19,7 +19,7 @@ def store_conceptnet_embeddings(clipmodel_name, args):
     print("hey")
     all_conceptnetwords = set()
 
-    file = open('../data_files/ass_onlyenglish.csv')
+    file = open('../../data_files/ass_onlyenglish.csv')
     csvreader = csv.reader(file)
     for i, row in enumerate(csvreader):
         conc_one = str(row[2].split("/")[3]).replace("_", " ")
