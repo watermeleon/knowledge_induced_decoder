@@ -28,8 +28,8 @@ def store_conceptnet_embeddings(clipmodel_name, args):
         all_conceptnetwords.add(conc_two)
     print(len(all_conceptnetwords))
 
-    device = torch.device('cpu')
-    # device = torch.device(args.device)
+    # device = torch.device('cpu')
+    device = torch.device(args.device)
     model, _ = clip.load(clipmodel_name, device=device)
 
     pick_dict = {}
