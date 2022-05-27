@@ -33,8 +33,8 @@ def create_nested(clipmodel, pretok, tok_thresh):
     # load the stored embeddings:
     with open(cn_wordfeats_path, 'rb') as f:
                 cn_wordfeats = pickle.load(f)
-    if clipmodel == "ViT-B_32":
-        cn_wordfeats =  {str(k).encode('latin-1').decode('utf-8') : v for k,v in cn_wordfeats.items()}
+    # if clipmodel == "ViT-B_32":
+    #     cn_wordfeats =  {str(k).encode('latin-1').decode('utf-8') : v for k,v in cn_wordfeats.items()}
 
     file_to_store = open(out_path, "wb")
 
