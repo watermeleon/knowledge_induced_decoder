@@ -164,7 +164,7 @@ class KnowledgeGraph(object):
         # retrieve the Keywords for each contextfeat and call the knowledgewithvm
         all_img_embs = []
         sent_batch = []
-        for image_emb in contextfeat:.astype(np.float)
+        for image_emb in contextfeat:
             all_img_embs.append(image_emb)
             res = self.cossim(self.all_keywordembed, image_emb)
             topNind = torch.topk(res.flatten(), self.kw_size).indices
