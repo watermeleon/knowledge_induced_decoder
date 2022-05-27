@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     # encoder and decoder
     parser.add_argument('--dropout', type=float, default=0.1)
-    parser.add_argument('--enc_model', type=str, default="ViT", choices=['ViT', 'rn50x4'])
+    parser.add_argument('--enc_model', type=str, default="ViT-B/32", choices=['ViT-B/32', 'rn50x4'])
     
     parser.add_argument('--N_dec', type=int, default=3)
     parser.add_argument('--N_enc', type=int, default=3)
