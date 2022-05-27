@@ -37,7 +37,7 @@ def store_conceptnet_embeddings(clipmodel_name, args):
 
     pick_dict = {}
     i = 0
-    out_path = "conceptNet_embedding_rn50x4.pkl"
+    out_path = "../../data_files/conceptNet_embedding_"+clipmodel+".pkl"
     file_to_store = open(out_path, "wb")
 
     word_prefix = ""
