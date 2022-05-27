@@ -67,10 +67,13 @@ class KnowledgeGraph(object):
             self.remlist = [spec["bos_tokenid"], spec["eos_tokenid"]]
     
 
-        pth_clipemb = "../data_files/keyword_embedding_"+str(enc_model)+".pkl"
+        # pth_clipemb = "../data_files/keyword_embedding_"+str(enc_model)+".pkl"
+        pth_clipemb = "../data_files/keyword_embedding_ViT-B_32.pkl"
+
+        
         with open(pth_clipemb, 'rb') as f:
                     all_wordemb = pickle.load(f)
-        self.all_keywords = [word["word"] for word in all_wordemb["captions"]]
+        self.all_keywords = [word for word in all_wordemb["captions"]]
         self.all_keywordembed = torch.stack([word for word in all_wordemb["clip_embedding"]]).to(self.device)
 
 
@@ -161,7 +164,7 @@ class KnowledgeGraph(object):
         # retrieve the Keywords for each contextfeat and call the knowledgewithvm
         all_img_embs = []
         sent_batch = []
-        for image_emb in contextfeat:
+        for image_emb in contextfeat:.astype(np.float)
             all_img_embs.append(image_emb)
             res = self.cossim(self.all_keywordembed, image_emb)
             topNind = torch.topk(res.flatten(), self.kw_size).indices
@@ -169,7 +172,8 @@ class KnowledgeGraph(object):
             for ind in topNind:
                 topNwordlist.append(self.all_keywords[ind])
             sent_batch.append(topNwordlist)
-        return self.add_knowledge_with_vm(sent_batch, image_emb=all_img_embs, max_edges=self.rw_size, add_pad=True, max_length=64, prefix_size = None)
+        return topNwordlist
+        # return self.add_knowledge_with_vm(sent_batch, image_emb=all_img_embs, max_edges=self.rw_size, add_pad=True, max_length=64, prefix_size = None)
 
 
     def add_knowledge_with_vm(self, sent_batch, image_emb=None, max_edges=5, add_pad=True, max_length=128, prefix_size = None):

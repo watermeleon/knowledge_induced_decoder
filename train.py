@@ -97,7 +97,8 @@ if __name__ == '__main__':
 
     print('KG context Transformer Training')
     device = torch.device(args.device)
-
+    new_enc_model = args.enc_model.replace('/', '_')
+    args.enc_model = new_enc_model
 
 
     writer = SummaryWriter(log_dir=os.path.join(args.logs_folder, args.exp_name))
