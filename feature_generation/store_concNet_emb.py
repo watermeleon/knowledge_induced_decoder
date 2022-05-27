@@ -36,12 +36,10 @@ def store_conceptnet_embeddings(clipmodel_name, args):
     model, _ = clip.load(clipmodel_name, device=device)
 
     pick_dict = {}
-    i = 0
     out_path = "../../data_files/conceptNet_embedding_"+clipmodel+".pkl"
     file_to_store = open(out_path, "wb")
 
     word_prefix = ""
-
     # for word_list in all_conceptnetwords:
     for j in tqdm(range(len(all_conceptnetwords))):
         word_list = all_conceptnetwords[j]
@@ -51,14 +49,9 @@ def store_conceptnet_embeddings(clipmodel_name, args):
             word_tok = clip.tokenize(word).to(device)
             prefix  = model.encode_text(word_tok).squeeze().detach().cpu().numpy()
 
-
         word2 = str(word).encode('latin-1').decode('utf-8')
         pick_dict[word2] = prefix
 
-        if i%1000 == 0:
-            print(i)
-        i+=1
-        # break
     pickle.dump(pick_dict, file_to_store)
 
 
