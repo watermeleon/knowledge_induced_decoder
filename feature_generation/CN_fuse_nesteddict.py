@@ -18,18 +18,14 @@ def create_nested(clipmodel, pretok, tok_thresh):
 
     print("started creating nested dict...")
     # load the nested dict
-    pth_clipemb = "../data_files/CN_feats/conceptnet_filt_nest_labels.pkl"
+    pth_clipemb = "../../data_files/CN_feats/conceptnet_filt_nest_labels.pkl"
     with open(pth_clipemb, 'rb') as f:
                 CN_dict = pickle.load(f)
     print("hi")
 
     pretok_label = "_pretok" if pretok else ""
-    if clipmodel == "ViT-B_32":
-        cn_wordfeats_path = "../data_files/CN_feats/conceptNet_embedding_ViT.pkl"
-        out_path = "../data_files/CN_feats/concNet_nested_emb_ViT" + pretok_label + "_maxtok.pkl"
-    else: 
-        cn_wordfeats_path = "../data_files/CN_feats/conceptNet_embedding_rn50x4.pkl"
-        out_path = "../data_files/CN_feats/concNet_nested_emb_rn50x4" + pretok_label + ".pkl"
+    cn_wordfeats_path = "../../data_files/CN_feats/conceptNet_embedding_"+clipmodel+".pkl"
+    out_path = "../../data_files/CN_feats/concNet_nested_emb_"+clipmodel + pretok_label + "_maxtok.pkl"
 
     # use the same tokenizer for both github and HF clip
     tokenizerBW =  CLIPTokenizerFast.from_pretrained("../models/tokenizers_stored/CLIPTokenizerFast")
