@@ -46,7 +46,7 @@ class KnowledgeGraph(object):
         if edge_select == "clipemb_pretok":
             pretok = "_pretok"
             edge_select = "clipemb"
-        graph_path = '../data_files/CN_feats/concNet_nested_emb_'+ str(enc_model)+ pretok +'.pkl'
+        graph_path = '../data_files/CN_feats/concNet_nested_emb_'+ str(enc_model)+ pretok +'_maxtok.pkl'
 
         with open(graph_path, 'rb') as f:
                         self.lookupdict = pickle.load(f)
