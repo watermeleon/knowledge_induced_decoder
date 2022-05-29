@@ -23,12 +23,35 @@ from transformers import  CLIPTextModel, CLIPTokenizer,CLIPProcessor, CLIPModel,
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 from data.utils import *
+
+
+import faiss
+
+class empty_fais_knn(object):
+    # def __init__(self):
+    def get_nn(self,q_emb):
+        return []
+class get_fais_knn(object):
+    def __init__(self, words, embeddings, k = 4):
+        self.dimension = 512    # dimensions of each vector                         
+        self.k = k       # return 3 nearest neighbours        
+        self.embeddings = embeddings.astype('float32')
+        self.words = words
+
+        self.index = faiss.index_factory(512, "Flat", faiss.METRIC_INNER_PRODUCT)
+        faiss.normalize_L2(self.embeddings)
+        self.index.add(self.embeddings)   # add the vectors and update the index
+    
+    def get_nn(self, q_emb):
+        ret = faiss.normalize_L2(q_emb)
+        _, indices = self.index.search(q_emb, self.k)
+        return list(self.words[indices][0])
 class KnowledgeGraph(object):
     """
     spo_files - list of Path of *.spo files, or default kg name. e.g., ['HowNet']
     """
 
-    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None,  edge_select="random", spec=None, kw_size = 5, rw_size = 5, enc_model = "ViT", only_kw = False, norel= False, only_l2r = False):
+    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None,  edge_select="random", spec=None, kw_size = 5, rw_size = 5, enc_model = "ViT-B_32", only_kw = False, norel= False, only_l2r = False, use_faiss = False):
         self.only_kw = only_kw
         self.predicate = predicate
         self.kw_size = kw_size
@@ -76,7 +99,22 @@ class KnowledgeGraph(object):
         self.all_keywords = [word for word in all_wordemb["captions"]]
         self.all_keywordembed = torch.stack([word for word in all_wordemb["clip_embedding"]]).to(self.device)
 
+        if use_faiss == True:
+            self.edge_select = "clipemb_faiss"        
+            self.newlookupdict = self.create_faiss_nested(self.lookupdict)
 
+    def create_faiss_nested(self, lookupdict):
+        newlookupdict = {}
+        for unigram, all_edges in lookupdict.items():
+            all_edges = np.array(all_edges)
+            if len(all_edges) == 0:
+                unigram_nn_obj = empty_fais_knn()
+            else:
+                edges_str_list = np.array(all_edges[:,0])
+                edges_emb = torch.tensor(np.vstack(all_edges[:, 1]).astype(np.float32)).to(self.device)
+                unigram_nn_obj = get_fais_knn(edges_str_list, np.copy(edges_emb.detach().numpy()), k= self.rw_size)
+            newlookupdict[unigram] = unigram_nn_obj
+        return newlookupdict
 
     def best_clip_score(self, rel_wordembed, max_edges, image_emb):
         res = self.cossim(rel_wordembed, image_emb)
@@ -84,6 +122,7 @@ class KnowledgeGraph(object):
         return topNind.detach().cpu().numpy()
 
     def get_ranked_edges(self, unigram, max_edges,  image_emb= None):
+        # if not self.edge_select == "clipemb_faiss":
         all_edges = np.array(self.lookupdict[unigram])
 
         if len(all_edges)<=max_edges:
@@ -102,8 +141,9 @@ class KnowledgeGraph(object):
             bestitems = self.best_clip_score(edges_emb, max_edges,image_emb= image_emb)
             bestwords = edges_str_list[bestitems]
             return bestwords
-
-
+        elif self.edge_select == "clipemb_faiss":
+            uni_nn_obj = self.newlookupdict[unigram]
+            return uni_nn_obj.get_nn(image_emb.clone().detach().unsqueeze(0).numpy())
 
     def tokenize_wordid(self, sent_batch):
         token_batch = []
@@ -172,8 +212,8 @@ class KnowledgeGraph(object):
             for ind in topNind:
                 topNwordlist.append(self.all_keywords[ind])
             sent_batch.append(topNwordlist)
-        # return topNwordlist
-        return self.add_knowledge_with_vm(sent_batch, image_emb=all_img_embs, max_edges=self.rw_size, add_pad=True, max_length=64, prefix_size = None)
+        return topNwordlist
+        # return self.add_knowledge_with_vm(sent_batch, image_emb=all_img_embs, max_edges=self.rw_size, add_pad=True, max_length=64, prefix_size = None)
 
 
     def add_knowledge_with_vm(self, sent_batch, image_emb=None, max_edges=5, add_pad=True, max_length=128, prefix_size = None):
