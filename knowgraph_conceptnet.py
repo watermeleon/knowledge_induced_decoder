@@ -112,7 +112,7 @@ class KnowledgeGraph(object):
             else:
                 edges_str_list = np.array(all_edges[:,0])
                 edges_emb = torch.tensor(np.vstack(all_edges[:, 1]).astype(np.float32)).to(self.device)
-                unigram_nn_obj = get_fais_knn(edges_str_list, np.copy(edges_emb.detach().numpy()), k= self.rw_size)
+                unigram_nn_obj = get_fais_knn(edges_str_list, np.copy(edges_emb.detach().cpu().numpy()), k= self.rw_size)
             newlookupdict[unigram] = unigram_nn_obj
         return newlookupdict
 
@@ -143,7 +143,7 @@ class KnowledgeGraph(object):
             return bestwords
         elif self.edge_select == "clipemb_faiss":
             uni_nn_obj = self.newlookupdict[unigram]
-            return uni_nn_obj.get_nn(image_emb.clone().detach().unsqueeze(0).numpy())
+            return uni_nn_obj.get_nn(image_emb.clone().detach().cpu().unsqueeze(0).numpy())
 
     def tokenize_wordid(self, sent_batch):
         token_batch = []
