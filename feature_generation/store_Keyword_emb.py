@@ -28,7 +28,7 @@ def main(clipmodel_name: str):
     print("len kw:", len(keywords))
 
     # load the precomputed conceptnet clip word embeddings
-    cn_wordfeats_path = "../../data_files/conceptNet_embedding_"+clipmodel+".pkl"
+    cn_wordfeats_path = "../../data_files/CN_feats/conceptNet_embedding_"+clipmodel+".pkl"
     with open(cn_wordfeats_path, 'rb') as f:
                 cn_wordfeats = pickle.load(f)
     cn_keyset = set(cn_wordfeats.keys())
