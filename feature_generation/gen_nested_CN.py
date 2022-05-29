@@ -76,7 +76,7 @@ def parse_rel_label(lookupdict):
 
 
 def main(openweb10th_path, ConcNet_Eng_path, out_path, args):
-    f = open(openweb10th_path, 'r')
+    f = open(openweb10th_path, 'r', encoding="UTF-8")
     with f:
         reader = csv.reader(f)
         all_openwebwords = [word[0] for word in reader]
@@ -89,7 +89,9 @@ def main(openweb10th_path, ConcNet_Eng_path, out_path, args):
     concNet_file = open(ConcNet_Eng_path)
     csvreader_list = list(csv.reader(concNet_file))
     tot_csv = len(csvreader_list)
-    concNet_nested_filt = defaultdict(list)
+    # concNet_nested_filt = defaultdict(list)
+
+    concNet_nested_filt = {k:[] for k in all_openwebwords}
     for i in tqdm(range(tot_csv)):
         row = csvreader_list[i]
         conc_one = str(row[2].split("/")[3]).replace("_", " ")
@@ -134,13 +136,6 @@ def main(openweb10th_path, ConcNet_Eng_path, out_path, args):
         print("Finished removing duplicates")
 
 
-    file_to_store = open("concNet_filt_TEMP_basic.pkl", "wb")
-    pickle.dump(concNet_nested_filt0, file_to_store)
-    file_to_store.close()
-    file_to_store = open("concNet_filt_TEMP_parseRelLabel.pkl", "wb")
-    pickle.dump(concNet_nested_filt1, file_to_store)
-    file_to_store.close()
-
     file_to_store = open(out_path, "wb")
     pickle.dump(concNet_nested_filt, file_to_store)
     file_to_store.close()
@@ -149,7 +144,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--openweb10th_path', default="../../data_files/openwebtext_10th.csv", type=str)
     parser.add_argument('--ConcNet_Eng_path', default="../../data_files/ass_onlyenglish.csv", type=str)
-    parser.add_argument('--out_path', default="../../data_files/CN_feats/concNet_filt_TEMP2.pkl", type=str)
+    parser.add_argument('--out_path', default="../../data_files/CN_feats/conceptnet_filt_nest_labels_new.pkl", type=str)
 
     parser.add_argument('--allow_duplicate', action='store_true')
     parser.add_argument('--no_parse_rel_label', action='store_true')
