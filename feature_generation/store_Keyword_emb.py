@@ -21,7 +21,7 @@ def main(clipmodel_name: str):
 
     print("starting now ...")
     # load the keywords
-    f = open('../../data_files/openwebtext_10th.csv', 'r')
+    f = open('../../data_files/openwebtext_10th.csv', 'r', encoding="UTF-8")
     with f:
         reader = csv.reader(f)
         keywords = [word[0] for word in reader]
