@@ -212,8 +212,8 @@ class KnowledgeGraph(object):
             for ind in topNind:
                 topNwordlist.append(self.all_keywords[ind])
             sent_batch.append(topNwordlist)
-        return topNwordlist
-        # return self.add_knowledge_with_vm(sent_batch, image_emb=all_img_embs, max_edges=self.rw_size, add_pad=True, max_length=64, prefix_size = None)
+        # return topNwordlist
+        return self.add_knowledge_with_vm(sent_batch, image_emb=all_img_embs, max_edges=self.rw_size, add_pad=True, max_length=64, prefix_size = None)
 
 
     def add_knowledge_with_vm(self, sent_batch, image_emb=None, max_edges=5, add_pad=True, max_length=128, prefix_size = None):
