@@ -43,9 +43,10 @@ class get_fais_knn(object):
         self.index.add(self.embeddings)   # add the vectors and update the index
     
     def get_nn(self, q_emb):
-        ret = faiss.normalize_L2(q_emb)
+        faiss.normalize_L2(q_emb)
         _, indices = self.index.search(q_emb, self.k)
-        return list(self.words[indices][0])
+        nn_words = list(self.words[indices][0])
+        return nn_words
 class KnowledgeGraph(object):
     """
     spo_files - list of Path of *.spo files, or default kg name. e.g., ['HowNet']
@@ -122,14 +123,14 @@ class KnowledgeGraph(object):
         return topNind.detach().cpu().numpy()
 
     def get_ranked_edges(self, unigram, max_edges,  image_emb= None):
-        # if not self.edge_select == "clipemb_faiss":
-        all_edges = np.array(self.lookupdict[unigram])
+        if not self.edge_select == "clipemb_faiss":
+            all_edges = np.array(self.lookupdict[unigram])
 
-        if len(all_edges)<=max_edges:
-            if self.edge_select == "clipemb" and len(all_edges) > 0:
-                return all_edges[:,0]
-            else:
-                return all_edges
+            if len(all_edges)<=max_edges:
+                if self.edge_select == "clipemb" and len(all_edges) > 0:
+                    return all_edges[:,0]
+                else:
+                    return all_edges
         
         if self.edge_select == "random":
             rand_ind = np.random.choice(len(all_edges), max_edges , replace=False)
@@ -143,7 +144,8 @@ class KnowledgeGraph(object):
             return bestwords
         elif self.edge_select == "clipemb_faiss":
             uni_nn_obj = self.newlookupdict[unigram]
-            return uni_nn_obj.get_nn(image_emb.clone().detach().cpu().unsqueeze(0).numpy())
+            bestwords = uni_nn_obj.get_nn(image_emb.clone().detach().cpu().numpy())
+            return bestwords
 
     def tokenize_wordid(self, sent_batch):
         token_batch = []
