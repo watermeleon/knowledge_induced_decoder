@@ -43,9 +43,11 @@ class get_fais_knn(object):
         self.index.add(self.embeddings)   # add the vectors and update the index
     
     def get_nn(self, q_emb):
+        # print("q_emb shizz:", type(q_emb), q_emb.shape)
         faiss.normalize_L2(q_emb)
         _, indices = self.index.search(q_emb, self.k)
-        nn_words = list(self.words[indices][0])
+        nn_words = np.squeeze(self.words[indices]).tolist()
+  
         return nn_words
 class KnowledgeGraph(object):
     """
@@ -103,6 +105,7 @@ class KnowledgeGraph(object):
         if use_faiss == True:
             self.edge_select = "clipemb_faiss"        
             self.newlookupdict = self.create_faiss_nested(self.lookupdict)
+            self.kw_sim = get_fais_knn(np.array(self.all_keywords), np.copy(self.all_keywordembed.detach().cpu().numpy()), k= self.kw_size)
 
     def create_faiss_nested(self, lookupdict):
         newlookupdict = {}
@@ -202,7 +205,19 @@ class KnowledgeGraph(object):
                     image = image.convert('RGB')
                 return image
                 
+            # bestwords = uni_nn_obj.get_nn(image_emb.clone().detach().cpu().numpy())
+
+
     def get_vm_from_imgid(self, contextfeat):
+        # retrieve the Keywords for each contextfeat and call the knowledgewithvm
+        all_img_embs = contextfeat
+        sent_batch = []
+        newcontfeat = contextfeat.float().squeeze(1).clone().detach().cpu().numpy()
+        sent_batch = self.kw_sim.get_nn(newcontfeat) 
+
+        return self.add_knowledge_with_vm(sent_batch, image_emb=all_img_embs, max_edges=self.rw_size, add_pad=True, max_length=64, prefix_size = None)
+
+    def get_vm_from_imgid_previous(self, contextfeat):
         # retrieve the Keywords for each contextfeat and call the knowledgewithvm
         all_img_embs = []
         sent_batch = []
