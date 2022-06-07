@@ -73,7 +73,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--seg_token', type=str, default="False", choices=['True', 'False'])
     parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused', 'parallel', 'stacked'])
+    parser.add_argument('--pll_dec', type=int, default=1)
+
     parser.add_argument('--one_kw_token', action='store_true') # for the stackeddecoder
+    parser.add_argument('--tf_model_conf', type=str, default="alt", choices=['alt', 'base', 'tiny']) # if not alt, overwrites other head and dmodel param
 
     # training specifics
     parser.add_argument('--start_rl', action='store_true')
@@ -94,6 +97,7 @@ if __name__ == '__main__':
 
 
 
+
     args = parser.parse_args()
     print(args)
 
@@ -101,6 +105,15 @@ if __name__ == '__main__':
     device = torch.device(args.device)
     new_enc_model = args.enc_model.replace('/', '_')
     args.enc_model = new_enc_model
+
+
+    if args.tf_model_conf != "alt":
+        if args.tf_model_conf == "base":
+            args.d_model = 512
+            args.h = 8
+        if args.tf_model_conf == "tiny":
+            args.d_model = 384
+            args.h = 6
 
 
     writer = SummaryWriter(log_dir=os.path.join(args.logs_folder, args.exp_name))
@@ -160,7 +173,7 @@ if __name__ == '__main__':
         decoder = PromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'],h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)
     elif args.decoder == "parallel":
         print("using parallel dec")
-        decoder = ParallelPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)
+        decoder = ParallelPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model, pll_dec_type = args.pll_dec)
     elif args.decoder == "stacked":
         print("using stacked decoder")
         decoder = StackedPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, one_kw_token=args.one_kw_token, d_model = args.d_model)

@@ -10,6 +10,49 @@ from models.transformer.utils import sinusoid_encoding_table, PositionWiseFeedFo
 from models.containers import Module, ModuleList
 
 
+class ParallelPromptDecoderLayer2(Module):
+    def __init__(self, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1, self_att_module=None,
+                 enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None):
+        super(ParallelPromptDecoderLayer2, self).__init__()
+
+        self.sent_msca = MSCA(d_model, d_k, d_v, h, d_ff, dropout, self_att_module,
+                 enc_att_module, self_att_module_kwargs, enc_att_module_kwargs)
+        self.ksb_msca = MSCA(d_model, d_k, d_v, h, d_ff, dropout, self_att_module,
+                 enc_att_module, self_att_module_kwargs, enc_att_module_kwargs)
+
+        # self.register_state('running_kw_sent', torch.zeros((0, d_model)))
+        self.register_state('running_ksb_outp', torch.zeros((0, d_model)))
+
+
+    def forward(self, know_sent_batch, input_sent, enc_output, mask_pad, ksb_pad_mask,  mask_self_att_sent, mask_self_att_ksb , mask_enc_att, seg_batch, pad_kw_tensor, kw_lengths, statefull_num):
+        """
+        input : position emb + already gen caption (probably)
+        enc_output : tensor of output of all the encoders
+        mask_pad :  (b_s, seq_len, 1) -> masks all the padding tokens
+        mask_self_att : (1, 1, seq_len, seq_len)
+        mask_enc_att :enc mask for input partial cap, size: (b_s, 1, 1, seq_len)
+
+        mask_self_att_sent = the original triangle mask + plut 1's on the place of kw's 
+        mask_self_att_prompt = the visibility matrix
+        """
+        # If is statefull, don't have: seg_batch, mask_self_att_ksb
+        if self._is_stateful and statefull_num >1:
+            kw_sent = input_sent
+            ksb_outp = self.running_ksb_outp 
+        else:
+
+            ksb_outp = self.ksb_msca(know_sent_batch, know_sent_batch, enc_output, ksb_pad_mask, mask_self_att_ksb, mask_enc_att)
+            for i in range(len(seg_batch)):
+                kws = ksb_outp[i][seg_batch[i]] 
+                pad_kw_tensor[i,:kw_lengths[i]] = kws
+
+            keywords = pad_kw_tensor
+            kw_sent = torch.cat((keywords.clone(), input_sent) ,-2)
+            if statefull_num == 1:
+                self.running_ksb_outp = ksb_outp
+
+        sent_outp = self.sent_msca(input_sent, kw_sent, enc_output, mask_pad, mask_self_att_sent, mask_enc_att)    
+        return ksb_outp, sent_outp
 class ParallelPromptDecoderLayer(Module):
     def __init__(self, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1, self_att_module=None,
                  enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None):
@@ -91,7 +134,7 @@ class MSCA(Module):
 
 class ParallelPromptDecoder(Module):
     def __init__(self, vocab_size, max_len, N_dec, padding_idx, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1,
-                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False):
+                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False, pll_dec_type= 1):
         super(ParallelPromptDecoder, self).__init__()
         self.d_model = d_model
         # self.pad_tokenid = spec["pad_tokenid"]
@@ -103,8 +146,9 @@ class ParallelPromptDecoder(Module):
         else:
             self.word_emb = nn.Embedding(vocab_size, d_model, padding_idx=padding_idx)
         self.pos_emb = nn.Embedding.from_pretrained(sinusoid_encoding_table(max_len + 1, d_model, 0), freeze=True)
+        pll_dec_layer = ParallelPromptDecoderLayer  if pll_dec_type == 1 else ParallelPromptDecoderLayer2
         self.layers = ModuleList(
-            [ParallelPromptDecoderLayer(d_model, d_k, d_v, h, d_ff, dropout, self_att_module=self_att_module,
+            [pll_dec_layer(d_model, d_k, d_v, h, d_ff, dropout, self_att_module=self_att_module,
                                 enc_att_module=enc_att_module, self_att_module_kwargs=self_att_module_kwargs,
                                 enc_att_module_kwargs=enc_att_module_kwargs) for _ in range(N_dec)])
         self.fc = nn.Linear(d_model, vocab_size, bias=False)
