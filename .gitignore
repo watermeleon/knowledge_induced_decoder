@@ -18,3 +18,4 @@ saved_models/
 old_tensorboard/
 generated_sentences/
 old/
+wandb/

@@ -30,7 +30,7 @@ from transformers import AutoTokenizer, CLIPTokenizer, CLIPTokenizerFast
 import cProfile
 import pstats 
 import ftfy
-
+import wandb
 # import training_functions 
 seed_num = 1234
 random.seed(seed_num)
@@ -94,10 +94,6 @@ if __name__ == '__main__':
     parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb','clipemb_pretok'])
     parser.add_argument('--use_faiss', action='store_true')
 
-
-
-
-
     args = parser.parse_args()
     print(args)
 
@@ -115,6 +111,9 @@ if __name__ == '__main__':
             args.d_model = 384
             args.h = 6
 
+    wandb.init(project=args.exp_name, entity="watermelontology")
+    wandb.config.update(args)
+    print(wandb.config)
 
     writer = SummaryWriter(log_dir=os.path.join(args.logs_folder, args.exp_name))
 
@@ -122,8 +121,6 @@ if __name__ == '__main__':
     if args.tokenizer == "bert":
         tokenizerBW = AutoTokenizer.from_pretrained("bert-base-uncased")
     elif args.tokenizer == "clip":
-        # tokenizerBW =  CLIPTokenizerFast.from_pretrained("openai/clip-vit-base-patch32", pad_token = "[PAD]")
-        # tokenizerBW_dec =  CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32", pad_token = "[PAD]")
         tokenizerBW =  CLIPTokenizerFast.from_pretrained("./models/tokenizers_stored/CLIPTokenizerFast")
         tokenizerBW_dec =  CLIPTokenizer.from_pretrained("./models/tokenizers_stored/CLIPTokenizer")
     else:
@@ -272,7 +269,8 @@ if __name__ == '__main__':
         writer.add_scalar('data/val_bleu4', scores['BLEU'][3], e)
         writer.add_scalar('data/val_meteor', scores['METEOR'], e)
         writer.add_scalar('data/val_rouge', scores['ROUGE'], e)
-
+        
+        val_scores = scores.copy()
         # Test scores
         scores = evaluate_metrics(model, dict_dataloader_test, spec, transform_tok = tokenizerBW_dec)
         print("Test scores", scores)
@@ -281,7 +279,19 @@ if __name__ == '__main__':
         writer.add_scalar('data/test_bleu4', scores['BLEU'][3], e)
         writer.add_scalar('data/test_meteor', scores['METEOR'], e)
         writer.add_scalar('data/test_rouge', scores['ROUGE'], e)
+        test_scores = scores.copy()
 
+        # log weights and biases results:    
+        ep_metrics = {"epoch": e ,"train_loss": train_loss, "val_cider": val_scores['CIDEr'],"val_bleu1":val_scores['BLEU'][0],
+                         "val_bleu4":val_scores['BLEU'][3], "val_meteor": val_scores['METEOR'], "val_rouge": val_scores['ROUGE'], 
+                         "test_cider": test_scores['CIDEr'],"test_bleu1":test_scores['BLEU'][0],
+                         "test_bleu4":test_scores['BLEU'][3], "test_meteor": test_scores['METEOR'], "test_rouge": test_scores['ROUGE']
+                         
+                         }
+        if use_rl:
+            ep_metrics["reward"] = reward
+            ep_metrics["reward_baseline"] = reward_baseline
+        wandb.log(ep_metrics)
         # Prepare for next epoch
         best = False
         if val_cider >= best_cider:

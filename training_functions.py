@@ -17,7 +17,8 @@ def evaluate_loss(model, dataloader, loss_fn, spec, vocab_size):
 
                 pbar.set_postfix(loss=running_loss / (it + 1))
                 pbar.update()
-
+                # if it > 10:
+                #     break
     val_loss = running_loss / len(dataloader)
     return val_loss
 
@@ -26,6 +27,7 @@ def evaluate_metrics(model, dataloader, spec, transform_tok = None):
     model.eval()
     gen = {}
     gts = {}
+    # i = 0
     print("now doing eval metrics")
     with tqdm(desc='Epoch %d - evaluation' % e, unit='it', total=len(dataloader), disable=spec['tdqm_disable']) as pbar:
         for it, (images, caps_gt) in enumerate(iter(dataloader)):
@@ -42,7 +44,8 @@ def evaluate_metrics(model, dataloader, spec, transform_tok = None):
                 gen['%d_%d' % (it, i)] = [gen_i, ]
                 gts['%d_%d' % (it, i)] = gts_i
             pbar.update()
-
+            # if it > 10:
+            #     break
     gts = evaluation.PTBTokenizer.tokenize(gts)
     gen = evaluation.PTBTokenizer.tokenize(gen)
     scores, _ = evaluation.compute_scores(gts, gen)
@@ -74,7 +77,8 @@ def train_xe(model, dataloader, optim, spec, vocab_size):
             pbar.set_postfix(loss=running_loss / (it + 1))
             pbar.update()
             scheduler.step()
-
+            # if it > 10:
+            #     break
     loss = running_loss / len(dataloader)
     return loss
 
