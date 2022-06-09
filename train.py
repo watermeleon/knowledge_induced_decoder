@@ -106,10 +106,10 @@ if __name__ == '__main__':
     if args.tf_model_conf != "alt":
         if args.tf_model_conf == "base":
             args.d_model = 512
-            args.h = 8
+            args.head = 8
         if args.tf_model_conf == "tiny":
             args.d_model = 384
-            args.h = 6
+            args.head = 6
 
     wandb.init(project=args.exp_name, entity="watermelontology")
     wandb.config.update(args)
