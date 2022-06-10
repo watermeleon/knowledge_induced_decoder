@@ -7,6 +7,7 @@ import os
 from posixpath import split
 import os.path
 from os import path
+import resource
 from PIL import Image
 
 from zmq import device
@@ -38,7 +39,9 @@ class get_fais_knn(object):
         self.embeddings = embeddings.astype('float32')
         self.words = words
 
-        self.index = faiss.index_factory(512, "Flat", faiss.METRIC_INNER_PRODUCT)
+        resource_faiss = faiss.StandardGpuResources()  # use a single GPU
+        index_cpu = faiss.index_factory(512, "Flat", faiss.METRIC_INNER_PRODUCT)
+        self.index = faiss.index_cpu_to_gpu(resource_faiss, 0, index_cpu)
         faiss.normalize_L2(self.embeddings)
         self.index.add(self.embeddings)   # add the vectors and update the index
     
