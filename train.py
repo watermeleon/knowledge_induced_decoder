@@ -111,7 +111,7 @@ if __name__ == '__main__':
             args.d_model = 384
             args.head = 6
 
-    wandb.init(project=args.exp_name, entity="watermelontology")
+    wandb.init(project="hyptuning" ,name=args.exp_name, entity="watermelontology")
     wandb.config.update(args)
     print(wandb.config)
 
@@ -282,7 +282,7 @@ if __name__ == '__main__':
         test_scores = scores.copy()
 
         # log weights and biases results:    
-        ep_metrics = {"epoch": e ,"train_loss": train_loss, "val_cider": val_scores['CIDEr'],"val_bleu1":val_scores['BLEU'][0],
+        ep_metrics = {"epoch": e ,"train_loss": train_loss,"val_loss":val_loss, "val_cider": val_scores['CIDEr'],"val_bleu1":val_scores['BLEU'][0],
                          "val_bleu4":val_scores['BLEU'][3], "val_meteor": val_scores['METEOR'], "val_rouge": val_scores['ROUGE'], 
                          "test_cider": test_scores['CIDEr'],"test_bleu1":test_scores['BLEU'][0],
                          "test_bleu4":test_scores['BLEU'][3], "test_meteor": test_scores['METEOR'], "test_rouge": test_scores['ROUGE']
