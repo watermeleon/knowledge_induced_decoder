@@ -38,13 +38,12 @@ class get_fais_knn(object):
         self.k = k       # return 3 nearest neighbours        
         self.embeddings = embeddings.astype('float32')
         self.words = words
-        index_cpu = faiss.index_factory(512, "Flat", faiss.METRIC_INNER_PRODUCT)
+        self.index = faiss.index_factory(512, "Flat", faiss.METRIC_INNER_PRODUCT)
 
-        if len(words) > 1000:
-            resource_faiss = faiss.StandardGpuResources()  # use a single GPU
-            self.index = faiss.index_cpu_to_gpu(resource_faiss, 0, index_cpu)
-        else:
-            self.index = index_cpu
+        # if len(words) > 1000:
+        #     resource_faiss = faiss.StandardGpuResources()  # use a single GPU
+        #     self.index = faiss.index_cpu_to_gpu(resource_faiss, 0, index_cpu)
+        # else:
 
         faiss.normalize_L2(self.embeddings)
         self.index.add(self.embeddings)   # add the vectors and update the index
