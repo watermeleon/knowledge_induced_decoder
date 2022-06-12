@@ -8,6 +8,8 @@ import numpy as np
 from models.transformer.attention import MultiHeadAttention
 from models.transformer.utils import sinusoid_encoding_table, PositionWiseFeedForward
 from models.containers import Module, ModuleList
+from models.transformer.decoders import embedding_table
+
 
 
 class DecoderLayer(Module):

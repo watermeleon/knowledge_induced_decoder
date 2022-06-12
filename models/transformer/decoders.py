@@ -50,11 +50,12 @@ class DecoderLayer(Module):
 class embedding_table():
     def __init__(self, vocab_size, d_model, padding_idx, enc_model, device):
         self.padding_idx = padding_idx
-        if enc_model == "ViT":
+        if enc_model == "ViT-B_32":
             clipmodel,_ = clip.load("ViT-B/32", device=device)
         else:
             clipmodel ,_= clip.load("RN50x4", device=device)
         self.w_freeze = clipmodel.token_embedding.weight.clone().detach()
+        self.w_freeze.requires_grad = False
         num_new_toks = vocab_size - clipmodel.vocab_size
         self.w_learn = Parameter(torch.normal(mean=0.0, std=1.0,size=(num_new_toks, d_model))).to(device)
         self.weights = torch.cat((self.w_freeze, self.w_learn), 0)

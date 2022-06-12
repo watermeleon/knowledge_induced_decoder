@@ -8,7 +8,8 @@ import numpy as np
 from models.transformer.attention import MultiHeadAttention
 from models.transformer.utils import sinusoid_encoding_table, PositionWiseFeedForward
 from models.containers import Module, ModuleList
-
+from models.transformer.decoders import embedding_table
+import clip
 
 class ParallelPromptDecoderLayer2(Module):
     def __init__(self, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1, self_att_module=None,
@@ -131,6 +132,7 @@ class MSCA(Module):
         ff = ff * mask_pad
         ff = ff.clamp(min=1e-4)
         return ff
+
 
 class ParallelPromptDecoder(Module):
     def __init__(self, vocab_size, max_len, N_dec, padding_idx, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1,
