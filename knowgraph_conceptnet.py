@@ -60,7 +60,7 @@ class KnowledgeGraph(object):
     spo_files - list of Path of *.spo files, or default kg name. e.g., ['HowNet']
     """
 
-    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None,  edge_select="random", spec=None, kw_size = 5, rw_size = 5, enc_model = "ViT-B_32", only_kw = False, norel= False, only_l2r = False, use_faiss = False):
+    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None,  edge_select="random", spec=None, kw_size = 5, rw_size = 5, enc_model = "ViT-B_32", only_kw = False, norel= False, only_l2r = False, use_faiss = False, rc_posidx2 = False):
         self.only_kw = only_kw
         self.predicate = predicate
         self.kw_size = kw_size
@@ -69,7 +69,7 @@ class KnowledgeGraph(object):
         self.norel = norel
         self.only_l2r = only_l2r
         self.tokenizer_dec = tokenizer
-
+        self.rc_posidx2 = rc_posidx2
 
         # max num related words is 5 + relationship label  = 6, but make 8 to binary reasons?
         self.first_pos_idx = 5*rw_size
@@ -311,6 +311,8 @@ class KnowledgeGraph(object):
                         kw_left_pos = ent_pos_idx[-1]
                         ent_pos_idx.reverse()
 
+                    if self.rc_posidx2 == False:
+                        kw_left_pos = kw_right_pos = kw_pos
                     entities_pos_idx.append(ent_pos_idx)
                     ent_abs_idx = [abs_idx + i for i in range(1, len(ent)+1)]
                     abs_idx = ent_abs_idx[-1]
