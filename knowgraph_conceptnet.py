@@ -72,7 +72,7 @@ class KnowledgeGraph(object):
 
 
         # max num related words is 5 + relationship label  = 6, but make 8 to binary reasons?
-        self.first_pos_idx = 8
+        self.first_pos_idx = 4*rw_size
         print("using edge select type:", edge_select)
         pretok = ""
         if edge_select == "clipemb_pretok":
@@ -295,6 +295,8 @@ class KnowledgeGraph(object):
 
                 entities_pos_idx = []
                 entities_abs_idx = []
+                kw_pos = token_pos_idx[-1]
+                kw_left_pos = kw_right_pos = kw_pos
                 for j, ent in enumerate(entities):
                     """ 
                     ent_pos_idx : from token, +1 for each part of entity
@@ -302,9 +304,11 @@ class KnowledgeGraph(object):
                     """
 
                     if self.only_l2r or order_rel[j]==0:
-                        ent_pos_idx = [token_pos_idx[-1] + i for i in range(1, len(ent)+1)]
+                        ent_pos_idx = [kw_right_pos + i for i in range(1, len(ent)+1)]
+                        kw_right_pos = ent_pos_idx[-1]
                     else:
-                        ent_pos_idx = [token_pos_idx[-1] - i for i in range(1, len(ent)+1)]
+                        ent_pos_idx = [kw_left_pos - i for i in range(1, len(ent)+1)]
+                        kw_left_pos = ent_pos_idx[-1]
                         ent_pos_idx.reverse()
 
                     entities_pos_idx.append(ent_pos_idx)
