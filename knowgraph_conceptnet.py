@@ -72,7 +72,7 @@ class KnowledgeGraph(object):
 
 
         # max num related words is 5 + relationship label  = 6, but make 8 to binary reasons?
-        self.first_pos_idx = 4*rw_size
+        self.first_pos_idx = 5*rw_size
         print("using edge select type:", edge_select)
         pretok = ""
         if edge_select == "clipemb_pretok":
