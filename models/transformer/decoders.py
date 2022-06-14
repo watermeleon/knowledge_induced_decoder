@@ -62,7 +62,7 @@ class embedding_table():
     
         
         if d_model != 512:
-            self.fc = nn.Linear(512, d_model, bias=False)
+            self.fc = nn.Linear(512, d_model, bias=False, device = device)
             self.get_emb = self.get_emb_reduced_dim
         else:
             self.get_emb = self.get_basic
