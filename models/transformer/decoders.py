@@ -57,11 +57,26 @@ class embedding_table():
         self.w_freeze = clipmodel.token_embedding.weight.clone().detach()
         self.w_freeze.requires_grad = False
         num_new_toks = vocab_size - clipmodel.vocab_size
-        self.w_learn = Parameter(torch.normal(mean=0.0, std=1.0,size=(num_new_toks, d_model))).to(device)
+        self.w_learn = Parameter(torch.normal(mean=0.0, std=1.0,size=(num_new_toks, 512))).to(device)
         self.weights = torch.cat((self.w_freeze, self.w_learn), 0)
+    
+        
+        if d_model != 512:
+            self.fc = nn.Linear(512, d_model, bias=False)
+            self.get_emb = self.get_emb_reduced_dim
+        else:
+            self.get_emb = self.get_basic
+            
+    def get_basic(self, inp):
+        return F.embedding(inp, self.weights, padding_idx = self.padding_idx)
+
+    def get_emb_reduced_dim(self, inp):
+        inp = F.embedding(inp, self.weights, padding_idx = self.padding_idx)
+        inp= self.fc(inp)
+        return inp
 
     def __call__(self, inp):
-        return F.embedding(inp, self.weights, padding_idx = self.padding_idx)
+        return self.get_emb(inp)
 
 
 class PromptDecoder(Module):

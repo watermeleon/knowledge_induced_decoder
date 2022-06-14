@@ -136,7 +136,7 @@ class MSCA(Module):
 
 class ParallelPromptDecoder(Module):
     def __init__(self, vocab_size, max_len, N_dec, padding_idx, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1,
-                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False, pll_dec_type= 1):
+                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False, pll_dec_type= 1, seg_token_kw=False):
         super(ParallelPromptDecoder, self).__init__()
         self.d_model = d_model
         # self.pad_tokenid = spec["pad_tokenid"]
@@ -162,6 +162,7 @@ class ParallelPromptDecoder(Module):
         self.register_state('running_seq', torch.zeros((1,)).long())
         self.max_pref = 0
         self.seg_token = seg_token
+        self.seg_token_kw = seg_token_kw
 
         
         kw_tokens = 15
@@ -242,7 +243,10 @@ class ParallelPromptDecoder(Module):
             posemb_ksb = self.pos_emb(position_batch)
             ksb_out = wordemb_ksb + posemb_ksb
             if self.seg_token == True:
-                ksb_out += 1
+                if self.seg_token_kw == True:
+                    ksb_out[seg_batch] +=1
+                else:
+                    ksb_out += 1
 
             # compute the kw tensor
             pad_emb = self.word_emb(torch.tensor([self.padding_idx], device=input.device))
