@@ -27,9 +27,7 @@ from data.utils import *
 
 
 import faiss
-
 class empty_fais_knn(object):
-    # def __init__(self):
     def get_nn(self,q_emb):
         return []
 class get_fais_knn(object):
@@ -40,16 +38,10 @@ class get_fais_knn(object):
         self.words = words
         self.index = faiss.index_factory(512, "Flat", faiss.METRIC_INNER_PRODUCT)
 
-        # if len(words) > 1000:
-        #     resource_faiss = faiss.StandardGpuResources()  # use a single GPU
-        #     self.index = faiss.index_cpu_to_gpu(resource_faiss, 0, index_cpu)
-        # else:
-
         faiss.normalize_L2(self.embeddings)
         self.index.add(self.embeddings)   # add the vectors and update the index
     
     def get_nn(self, q_emb):
-        # print("q_emb shizz:", type(q_emb), q_emb.shape)
         faiss.normalize_L2(q_emb)
         _, indices = self.index.search(q_emb, self.k)
         nn_words = np.squeeze(self.words[indices]).tolist()
@@ -86,7 +78,6 @@ class KnowledgeGraph(object):
         self.edge_select = edge_select
         self.tokenizer = get_tokenizer("spacy")
 
-
         self.ps = PorterStemmer()
         self.special_tags = set(config.NEVER_SPLIT_TAG)
         self.cossim = torch.nn.CosineSimilarity()
@@ -98,10 +89,8 @@ class KnowledgeGraph(object):
         if spec is not None:
             self.remlist = [spec["bos_tokenid"], spec["eos_tokenid"]]
     
-
         # pth_clipemb = "../data_files/keyword_embedding_"+str(enc_model)+".pkl"
         pth_clipemb = "../data_files/keyword_embedding_ViT-B_32.pkl"
-
         
         with open(pth_clipemb, 'rb') as f:
                     all_wordemb = pickle.load(f)
@@ -112,6 +101,7 @@ class KnowledgeGraph(object):
             self.edge_select = "clipemb_faiss"        
             self.newlookupdict = self.create_faiss_nested(self.lookupdict)
             self.kw_sim = get_fais_knn(np.array(self.all_keywords), np.copy(self.all_keywordembed.detach().cpu().numpy()), k= self.kw_size)
+
 
     def create_faiss_nested(self, lookupdict):
         newlookupdict = {}
@@ -126,10 +116,12 @@ class KnowledgeGraph(object):
             newlookupdict[unigram] = unigram_nn_obj
         return newlookupdict
 
+
     def best_clip_score(self, rel_wordembed, max_edges, image_emb):
         res = self.cossim(rel_wordembed, image_emb)
         topNind = torch.topk(res.flatten(), max_edges).indices
         return topNind.detach().cpu().numpy()
+
 
     def get_ranked_edges(self, unigram, max_edges,  image_emb= None):
         if not self.edge_select == "clipemb_faiss":
@@ -156,6 +148,7 @@ class KnowledgeGraph(object):
             bestwords = uni_nn_obj.get_nn(image_emb.clone().detach().cpu().numpy())
             return bestwords
 
+
     def tokenize_wordid(self, sent_batch):
         token_batch = []
         for inp_sents in sent_batch:
@@ -163,6 +156,7 @@ class KnowledgeGraph(object):
             newberttokens = [word[1:-1] for word in berttokens.input_ids]
             token_batch.append(newberttokens)
         return token_batch
+
 
     def entities_tokenized_pretok(self, entities):
         order_rel = []
@@ -179,40 +173,6 @@ class KnowledgeGraph(object):
 
         return combitoklist , order_rel
 
-    def entities_tokenized(self, entities):
-
-        order_rel = []
-        token_ent = []
-        ent_list = []
-        for ent in entities:
-            # order is 0 from l2r, 1 from r2l
-            order = ent[-1]
-            ent = ent[:-1]
-            ent = list(ent)
-            ent = " ".join(ent)
-            ent_list.append(ent)
-            order_rel.append(order)
-
-        berttokens = self.transformer_tokenizer(ent_list, padding=False).input_ids
-        token_ent = [list(full_tok)[1:-1] for full_tok in berttokens]
-
-        return token_ent , order_rel
-
-    def pilimg_from_id(self, cocoid):
-        # look through the three image folders for the image based on cocoid
-        cocoid = cocoid.item()
-        for filepath_im in ["train2014", "val2014", "test2014"]:
-            filename = "COCO_" + filepath_im+ "_" +(12-len(str(cocoid)))* "0" + str(cocoid) + ".jpg"
-            file_path = "../Datasets/MsCoco/" + filepath_im + "/" + filename
-            if path.exists(file_path):
-                image = Image.open(file_path)
-                if np.array(image).shape[-1] != 3:
-                    print("not 3 dim, but;", np.array(image).shape)
-                    image = image.convert('RGB')
-                return image
-                
-            # bestwords = uni_nn_obj.get_nn(image_emb.clone().detach().cpu().numpy())
-
 
     def get_vm_from_imgid(self, contextfeat):
         # retrieve the Keywords for each contextfeat and call the knowledgewithvm
@@ -221,21 +181,6 @@ class KnowledgeGraph(object):
         newcontfeat = contextfeat.float().squeeze(1).clone().detach().cpu().numpy()
         sent_batch = self.kw_sim.get_nn(newcontfeat) 
 
-        return self.add_knowledge_with_vm(sent_batch, image_emb=all_img_embs, max_edges=self.rw_size, add_pad=True, max_length=64, prefix_size = None)
-
-    def get_vm_from_imgid_previous(self, contextfeat):
-        # retrieve the Keywords for each contextfeat and call the knowledgewithvm
-        all_img_embs = []
-        sent_batch = []
-        for image_emb in contextfeat:
-            all_img_embs.append(image_emb)
-            res = self.cossim(self.all_keywordembed, image_emb)
-            topNind = torch.topk(res.flatten(), self.kw_size).indices
-            topNwordlist = []
-            for ind in topNind:
-                topNwordlist.append(self.all_keywords[ind])
-            sent_batch.append(topNwordlist)
-        # return topNwordlist
         return self.add_knowledge_with_vm(sent_batch, image_emb=all_img_embs, max_edges=self.rw_size, add_pad=True, max_length=64, prefix_size = None)
 
 
