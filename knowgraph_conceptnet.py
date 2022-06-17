@@ -221,14 +221,14 @@ class KnowledgeGraph(object):
             split_sent_vanilla = sent_batch[sent_it]
             for token_it, token in enumerate(split_sent):  
                 unigram = split_sent_vanilla[token_it]
-                print("keyword:", unigram )  
+                # print("keyword:", unigram )  
                 entities_words, entities,  order_rel = [], [], []
 
                 if not self.only_kw:
                     if str(unigram) not in self.special_tags:
                         entities_words = self.get_ranked_edges(unigram, max_edges = max_edges, image_emb = image_emb[sent_it])
                     entities,  order_rel = [], []
-                    print("entities words:", entities_words)
+                    # print("entities words:", entities_words)
                     if len(entities_words) != 0:
                         entities , order_rel = self.entities_tokenized_pretok(entities_words)
 
