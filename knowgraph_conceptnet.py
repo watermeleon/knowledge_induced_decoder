@@ -221,7 +221,8 @@ class KnowledgeGraph(object):
             for token_it, token in enumerate(split_sent):  
                 unigram = split_sent_vanilla[token_it]
                 # print("keyword:", unigram )  
-                entities,  order_rel = [], []
+                entities_words, entities,  order_rel = [], [], []
+
                 if not self.only_kw:
                     if str(unigram) not in self.special_tags:
                         entities_words = self.get_ranked_edges(unigram, max_edges = max_edges, image_emb = image_emb[sent_it])
