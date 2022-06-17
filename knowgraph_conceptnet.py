@@ -45,7 +45,8 @@ class get_fais_knn(object):
         faiss.normalize_L2(q_emb)
         _, indices = self.index.search(q_emb, self.k)
         nn_words = np.squeeze(self.words[indices]).tolist()
-  
+        if self.k == 1:
+            nn_words = [nn_words]
         return nn_words
 class KnowledgeGraph(object):
     """
