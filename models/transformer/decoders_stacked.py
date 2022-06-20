@@ -49,7 +49,7 @@ class DecoderLayer(Module):
 
 class StackedPromptDecoder(Module):
     def __init__(self, vocab_size, max_len, N_dec, padding_idx, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1,
-                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False, one_kw_token = False):
+                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False, one_kw_token = False, seg_token_kw=False):
         super(StackedPromptDecoder, self).__init__()
         self.d_model = d_model
 
@@ -77,7 +77,7 @@ class StackedPromptDecoder(Module):
         self.register_state('running_seq', torch.zeros((1,)).long())
         self.max_pref = 0
         self.seg_token = seg_token
-
+        self.seg_token_kw = seg_token_kw
         
         kw_tokens = 15
         self.pos_start_sent =  kw_tokens + KG.first_pos_idx
