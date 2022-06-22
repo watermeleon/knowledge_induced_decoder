@@ -38,7 +38,7 @@ torch.manual_seed(seed_num)
 np.random.seed(seed_num)
 
 
-# exec(open("training_functions.py").read())
+exec(open("training_functions.py").read())
 
 if __name__ == '__main__':
 
