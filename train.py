@@ -1,7 +1,7 @@
 
 import os
 
-# os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 from ast import arg
@@ -25,7 +25,7 @@ import itertools
 import multiprocessing
 from shutil import copyfile
 from torch import autograd
-from transformers import AutoTokenizer, CLIPTokenizer, CLIPTokenizerFast
+from transformers import AutoTokenizer, CLIPTokenizer, CLIPTokenizerFast, GPT2TokenizerFast, GPT2Tokenizer
 # from torch.utils.data import IterableDataset  
 import cProfile
 import pstats 
@@ -38,8 +38,7 @@ torch.manual_seed(seed_num)
 np.random.seed(seed_num)
 
 
-exec(open("training_functions.py").read())
-
+# exec(open("training_functions.py").read())
 
 if __name__ == '__main__':
 
@@ -76,6 +75,7 @@ if __name__ == '__main__':
     parser.add_argument('--seg_token_kw', action='store_true')
     parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused', 'parallel', 'stacked'])
     parser.add_argument('--pll_dec', type=int, default=1)
+    parser.add_argument('--stck_gpt2', action='store_true')
 
     parser.add_argument('--one_kw_token', action='store_true') # for the stackeddecoder
     parser.add_argument('--tf_model_conf', type=str, default="alt", choices=['alt', 'base', 'tiny']) # if not alt, overwrites other head and dmodel param
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     # training specifics
     parser.add_argument('--start_rl', action='store_true')
     parser.add_argument('--no_rl', action='store_true')
-    parser.add_argument('--tokenizer', type=str, default="bert", choices=['bert', 'clip'])
+    parser.add_argument('--tokenizer', type=str, default="bert", choices=['bert', 'clip', 'gpt2'])
     parser.add_argument('--pt_token_emb', action='store_true') # for the KG part of the decoder
     parser.add_argument('--optimizer', type=str, default="adam", choices=['adam', 'adamW'])
 
@@ -121,12 +121,17 @@ if __name__ == '__main__':
 
     writer = SummaryWriter(log_dir=os.path.join(args.logs_folder, args.exp_name))
 
+    tokenizerBW_clip =  CLIPTokenizerFast.from_pretrained("./models/tokenizers_stored/CLIPTokenizerFast")
+
     # load transformer numericalizer/tokenizer
     if args.tokenizer == "bert":
         tokenizerBW = AutoTokenizer.from_pretrained("bert-base-uncased")
     elif args.tokenizer == "clip":
         tokenizerBW =  CLIPTokenizerFast.from_pretrained("./models/tokenizers_stored/CLIPTokenizerFast")
         tokenizerBW_dec =  CLIPTokenizer.from_pretrained("./models/tokenizers_stored/CLIPTokenizer")
+    elif args.tokenizer == "gpt2":
+        tokenizerBW =  GPT2TokenizerFast.from_pretrained("gpt2", pad_token="[PAD]")
+        tokenizerBW_dec =  GPT2Tokenizer.from_pretrained("gpt2", pad_token="[PAD]")
     else:
         print("ERROR: unrecogniezed transformer tokenizer:", args.tokenizer)
 
@@ -136,20 +141,28 @@ if __name__ == '__main__':
     cls_tok = tokenizerBW.cls_token
     spec = {}
     # do this because bert tokenizer doesn't sue bos, but cls, and sep i.s.o. eos..
-    sample_txt = tokenizerBW("[PAD]").input_ids
-    spec['eos_tokenid'] =  tokenizerBW.sep_token_id if cls_tok is not None else sample_txt[-1]
-    spec['bos_tokenid'] =  tokenizerBW.cls_token_id if cls_tok is not None else sample_txt[0]
-    spec['pad_tokenid'] = sample_txt[1]
+    if args.tokenizer == "clip":
+        sample_txt = tokenizerBW("[PAD]").input_ids
+        spec['eos_tokenid'] =  tokenizerBW.sep_token_id if cls_tok is not None else sample_txt[-1]
+        spec['bos_tokenid'] =  tokenizerBW.cls_token_id if cls_tok is not None else sample_txt[0]
+        spec['pad_tokenid'] = sample_txt[1]
+    else:
+        spec['eos_tokenid'] =  0
+        spec['bos_tokenid'] = 0
+        spec['pad_tokenid'] = 0
     spec['tdqm_disable'] = False
     spec["device"] = device
     print("Selected specifications:", spec)
 
+    pad_token_id = 0
+    if args.tokenizer == "clip":
+        pad_token_id = tokenizerBW.encode(tokenizerBW.pad_token)[1]
     # Pipeline for image regions
     image_field = ImageDetectionsField(detections_path=args.features_path, max_detections=50, load_in_tmp=False)
     # get the 1d clip emb features
     clipemb_field = ClipEmbDetectionsField(detections_path=args.contextfeat_path, load_in_tmp=False)
     # Pipeline for text
-    text_field = TextField(pad_token='[PAD]', lower=True, tokenize='spacy', remove_punctuation=True, nopoints=False, transform_tok = tokenizerBW, use_vocab= False)
+    text_field = TextField(pad_token='[PAD]', lower=True, tokenize='spacy', remove_punctuation=True, nopoints=False, transform_tok = tokenizerBW, use_vocab= False, pad_token_id=pad_token_id)
     # Create the dataset
     dataset = COCO(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder,cocoid_field= clipemb_field)
     train_dataset, val_dataset, test_dataset = dataset.splits
@@ -168,7 +181,7 @@ if __name__ == '__main__':
 
     seg_token = args.seg_token == "True"
 
-    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw, norel= args.no_rel_label, only_l2r = args.rel_only_l2r, use_faiss = args.use_faiss, rc_posidx2 =args.rc_posidx2)
+    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW_clip, device = device, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw, norel= args.no_rel_label, only_l2r = args.rel_only_l2r, use_faiss = args.use_faiss, rc_posidx2 =args.rc_posidx2)
 
     if args.decoder == "kg_infused":
         print("using normal dec")
@@ -178,7 +191,7 @@ if __name__ == '__main__':
         decoder = ParallelPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model, pll_dec_type = args.pll_dec)
     elif args.decoder == "stacked":
         print("using stacked decoder")
-        decoder = StackedPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, one_kw_token=args.one_kw_token, d_model = args.d_model, seg_token_kw = args.seg_token_kw)
+        decoder = StackedPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, one_kw_token=args.one_kw_token, d_model = args.d_model, seg_token_kw = args.seg_token_kw, use_gpt=args.stck_gpt2)
     elif args.decoder == "vanilla":
        print("using vanilla decoder")
        decoder = VanillaDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, enc_model = args.enc_model, dropout=args.dropout, d_model = args.d_model)

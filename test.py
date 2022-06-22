@@ -151,13 +151,16 @@ if __name__ == '__main__':
     spec["device"] = device
     print("Selected specifications:", spec)
 
+    pad_token_id = 0
+    if args.tokenizer == "clip":
+        pad_token_id = tokenizerBW.encode(tokenizerBW.pad_token)[1]
 
     # Pipeline for image regions
     image_field = ImageDetectionsField(detections_path=args.features_path, max_detections=50, load_in_tmp=False,print_img_name=True)
     # get the 1d clip emb features
     clipemb_field = ClipEmbDetectionsField(detections_path=args.contextfeat_path, load_in_tmp=False)
     # Pipeline for text
-    text_field = TextField(pad_token='[PAD]', lower=True, tokenize='spacy', remove_punctuation=True, nopoints=False, transform_tok = tokenizerBW, use_vocab= False)
+    text_field = TextField(pad_token='[PAD]', lower=True, tokenize='spacy', remove_punctuation=True, nopoints=False, transform_tok = tokenizerBW, use_vocab= False, pad_token_id=pad_token_id)
     # Create the dataset
     dataset = COCO(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder,cocoid_field= clipemb_field)
     train_dataset, val_dataset, test_dataset = dataset.splits

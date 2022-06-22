@@ -179,7 +179,7 @@ class TextField(RawField):
     def __init__(self, use_vocab=True, init_token=None, eos_token=None, fix_length=None, dtype=torch.long,
                  preprocessing=None, postprocessing=None, lower=False, tokenize=(lambda s: s.split()),
                  remove_punctuation=False, include_lengths=False, batch_first=True, pad_token="<pad>",
-                 unk_token="<unk>", pad_first=False, truncate_first=False, vectors=None, nopoints=True, transform_tok = None):
+                 unk_token="<unk>", pad_first=False, truncate_first=False, vectors=None, nopoints=True, transform_tok = None, pad_token_id = -1):
         self.use_vocab = use_vocab
         self.init_token = init_token
         self.eos_token = eos_token
@@ -198,8 +198,9 @@ class TextField(RawField):
         self.vectors = vectors
         self.transform_tok = transform_tok
 
-        if self.transform_tok is not None:
-            self.transform_pad_id = transform_tok.encode(transform_tok.pad_token)[1]
+        # if self.transform_tok is not None:
+        #     self.transform_pad_id = transform_tok.encode(transform_tok.pad_token)[1]
+        self.transform_pad_id = pad_token_id
 
         if nopoints:
             self.punctuations.append("..")

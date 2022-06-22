@@ -9,7 +9,7 @@ from models.transformer.attention import MultiHeadAttention
 from models.transformer.utils import sinusoid_encoding_table, PositionWiseFeedForward
 from models.containers import Module, ModuleList
 from models.transformer.decoders import embedding_table
-from transformers import GPT2LMHeadModel
+
 
 
 class DecoderLayer(Module):
@@ -49,7 +49,7 @@ class DecoderLayer(Module):
 
 class StackedPromptDecoder(Module):
     def __init__(self, vocab_size, max_len, N_dec, padding_idx, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1,
-                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False, one_kw_token = False, seg_token_kw=False, use_gpt=False):
+                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False, one_kw_token = False, seg_token_kw=False):
         super(StackedPromptDecoder, self).__init__()
         self.d_model = d_model
 
@@ -82,15 +82,10 @@ class StackedPromptDecoder(Module):
         kw_tokens = 15
         self.pos_start_sent =  kw_tokens + KG.first_pos_idx
         self.one_kw_token = one_kw_token
-        self.use_gpt = use_gpt
-        if self.use_gpt:
-            self.gpt = GPT2LMHeadModel.from_pretrained('gpt2')
-            self.gpt.eval()
-            self.gpt_embedding_size = self.gpt.transformer.wte.weight.shape[1]
-            self.fc_gpt = nn.Linear(d_model, self.gpt_embedding_size , bias=False)
 
+    
 
-    def forward_gen(self, input, encoder_output, mask_encoder, contextfeat):
+    def forward(self, input, encoder_output, mask_encoder, contextfeat):
         """
         input : caption , probably the part that is already generated, so increases each time
         encoder_output : tensor of output of all the encoders
@@ -194,37 +189,16 @@ class StackedPromptDecoder(Module):
                     pad_kw_tensor[i,:kw_lengths[i]] = kws
             keywords_output = pad_kw_tensor
             sent_out = torch.cat((keywords_output, sent_out), 1)
-        
-        if self.use_gpt:
-            keywords_gpt = self.fc_gpt(keywords_output)
-            embedding_text = self.gpt.transformer.wte(input)
-            embedding_cat = torch.cat((keywords_gpt,embedding_text ), dim=1)
+            
+        for i, l in enumerate(self.layers):                    
+            sent_out = l(sent_out, encoder_output, mask_queries, mask_self_att_sent, mask_encoder)
 
-            out = self.gpt(inputs_embeds=embedding_cat, attention_mask=mask_queries)
-            return generate_beam(model, self.tokenizer, embed=keywords_gpt)[0]
-            # return out.logits[:,max_kw:]
-        else:    
-            for i, l in enumerate(self.layers):                    
-                sent_out = l(sent_out, encoder_output, mask_queries, mask_self_att_sent, mask_encoder)
+        if self.stateful_1 < 2:
+            sent_out = sent_out[:,max_kw:]
+            
+        out = self.fc(sent_out)
 
-            if self.stateful_1 < 2:
-                sent_out = sent_out[:,max_kw:]
-                
-            out = self.fc(sent_out)
-
-            return F.log_softmax(out, dim=-1)
+        return F.log_softmax(out, dim=-1)
 
 
     
-
-
-
-
-
-
-
-
-
-
-
-
