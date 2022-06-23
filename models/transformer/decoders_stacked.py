@@ -154,7 +154,8 @@ class StackedPromptDecoder(Module):
             mask_self_att_sent = self.running_mask_self_attention
             seq = self.running_seq + self.pos_start_sent
             self.running_seq.add_(1)
-
+        
+        print("seq is:", seq)
         wordemb = self.word_emb(input)
         posemb = self.pos_emb(seq)
         sent_out =  wordemb + posemb 
