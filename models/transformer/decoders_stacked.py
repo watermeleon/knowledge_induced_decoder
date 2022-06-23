@@ -157,7 +157,7 @@ class StackedPromptDecoder(Module):
         
         seqsize = seq.shape[-1]
         print("seqsize")
-        if len(seqsize) > 160:
+        if seqsize > 160:
             torch.set_printoptions(profile="full")
             print(x) # prints the whole tensor
             print("seq2 is:", seq)
