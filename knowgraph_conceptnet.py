@@ -24,12 +24,14 @@ from transformers import  CLIPTextModel, CLIPTokenizer,CLIPProcessor, CLIPModel,
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 from data.utils import *
-
+from treelib import Node, Tree
 
 import faiss
 class empty_fais_knn(object):
     def get_nn(self,q_emb):
         return []
+
+#  FAISS cosine distance
 class get_fais_knn(object):
     def __init__(self, words, embeddings, k = 4):
         self.dimension = 512    # dimensions of each vector                         
@@ -48,6 +50,27 @@ class get_fais_knn(object):
         if self.k == 1:
             nn_words = [nn_words]
         return nn_words
+
+#   FAISS but L2 distance
+# class get_fais_knn(object):
+#     def __init__(self, words, embeddings, k = 4):
+#         self.dimension = 512    # dimensions of each vector                         
+#         self.k = k       # return 3 nearest neighbours        
+#         self.embeddings = embeddings.astype('float32')
+#         self.words = words
+#         self.index = faiss.IndexFlatL2(self.dimension) 
+
+#         # faiss.normalize_L2(self.embeddings)
+#         self.index.add(self.embeddings)   # add the vectors and update the index
+    
+#     def get_nn(self, q_emb):
+#         # faiss.normalize_L2(q_emb)
+#         _, indices = self.index.search(q_emb, self.k)
+#         nn_words = np.squeeze(self.words[indices]).tolist()
+#         if self.k == 1:
+#             nn_words = [nn_words]
+#         return nn_words
+
 class KnowledgeGraph(object):
     """
     spo_files - list of Path of *.spo files, or default kg name. e.g., ['HowNet']
@@ -63,6 +86,7 @@ class KnowledgeGraph(object):
         self.only_l2r = only_l2r
         self.tokenizer_dec = tokenizer
         self.rc_posidx2 = rc_posidx2
+        self.use_imagegraph = False
 
         # max num related words is 5 + relationship label  = 6, but make 8 to binary reasons?
         self.first_pos_idx = 5*rw_size
@@ -184,6 +208,13 @@ class KnowledgeGraph(object):
 
         return self.add_knowledge_with_vm(sent_batch, image_emb=all_img_embs, max_edges=self.rw_size, add_pad=True, max_length=64, prefix_size = None)
 
+    def gen_imagegraph(self,tree,  unigram, entities, order_rel):
+        tree.create_node(unigram, unigram, parent="root") 
+        count = 0
+        for ent in entities:
+            ent_string = self.transformer_tokenizer.decode(ent)
+            tree.create_node(ent_string, unigram + str(count) , parent=unigram)
+            count +=1
 
     def add_knowledge_with_vm(self, sent_batch, image_emb=None, max_edges=5, add_pad=True, max_length=128, prefix_size = None):
         """
@@ -219,6 +250,11 @@ class KnowledgeGraph(object):
             pos_idx_kw_start = [abs_idx + 1]
 
             split_sent_vanilla = sent_batch[sent_it]
+            if self.use_imagegraph:
+                img_tree = Tree()
+                img_tree.create_node("root", "root") 
+
+
             for token_it, token in enumerate(split_sent):  
                 unigram = split_sent_vanilla[token_it]
                 # print("keyword:", unigram )  
@@ -231,7 +267,8 @@ class KnowledgeGraph(object):
                     # print("entities words:", entities_words)
                     if len(entities_words) != 0:
                         entities , order_rel = self.entities_tokenized_pretok(entities_words)
-
+                if self.use_imagegraph:
+                    self.gen_imagegraph(img_tree, unigram, entities, order_rel)
                 sent_tree.append((token, entities))
                 if str(token) in self.special_tags:
                     token_pos_idx = [pos_idx+1]
@@ -272,6 +309,9 @@ class KnowledgeGraph(object):
                 abs_idx_src += token_abs_idx
 
                 pos_idx_kw_start.append( abs_idx +1)
+
+            if self.use_imagegraph:
+                img_tree.show()
 
             first_kw_tok.append(pos_idx_kw_start[:-1])  # drop the last because it is where a (nonexisting) following kw would start
             # Get know_sent and pos

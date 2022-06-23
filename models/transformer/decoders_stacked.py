@@ -90,7 +90,7 @@ class StackedPromptDecoder(Module):
             self.fc_gpt = nn.Linear(d_model, self.gpt_embedding_size , bias=False)
 
 
-    def forward_gen(self, input, encoder_output, mask_encoder, contextfeat):
+    def forward(self, input, encoder_output, mask_encoder, contextfeat, gen_sent = False):
         """
         input : caption , probably the part that is already generated, so increases each time
         encoder_output : tensor of output of all the encoders
@@ -200,8 +200,11 @@ class StackedPromptDecoder(Module):
             embedding_text = self.gpt.transformer.wte(input)
             embedding_cat = torch.cat((keywords_gpt,embedding_text ), dim=1)
 
-            out = self.gpt(inputs_embeds=embedding_cat, attention_mask=mask_queries)
-            return generate_beam(model, self.tokenizer, embed=keywords_gpt)[0]
+            if gen_sent == True:
+                return keywords_gpt
+            else:
+                out = self.gpt(inputs_embeds=embedding_cat, attention_mask=mask_queries).logits[:,max_kw:]
+                return out
             # return out.logits[:,max_kw:]
         else:    
             for i, l in enumerate(self.layers):                    

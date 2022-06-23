@@ -27,6 +27,9 @@ from shutil import copyfile
 from torch import autograd
 from transformers import AutoTokenizer, CLIPTokenizer, CLIPTokenizerFast, GPT2TokenizerFast, GPT2Tokenizer
 # from torch.utils.data import IterableDataset  
+
+from models.beam_search.gpt2_generation import generate_beam
+
 import cProfile
 import pstats 
 import ftfy
@@ -130,8 +133,8 @@ if __name__ == '__main__':
         tokenizerBW =  CLIPTokenizerFast.from_pretrained("./models/tokenizers_stored/CLIPTokenizerFast")
         tokenizerBW_dec =  CLIPTokenizer.from_pretrained("./models/tokenizers_stored/CLIPTokenizer")
     elif args.tokenizer == "gpt2":
-        tokenizerBW =  GPT2TokenizerFast.from_pretrained("gpt2", pad_token="[PAD]")
-        tokenizerBW_dec =  GPT2Tokenizer.from_pretrained("gpt2", pad_token="[PAD]")
+        tokenizerBW =  GPT2TokenizerFast.from_pretrained("gpt2")
+        tokenizerBW_dec =  GPT2Tokenizer.from_pretrained("gpt2")
     else:
         print("ERROR: unrecogniezed transformer tokenizer:", args.tokenizer)
 
@@ -147,7 +150,8 @@ if __name__ == '__main__':
         spec['bos_tokenid'] =  tokenizerBW.cls_token_id if cls_tok is not None else sample_txt[0]
         spec['pad_tokenid'] = sample_txt[1]
     else:
-        spec['eos_tokenid'] =  0
+        stop_token = "."
+        spec['eos_tokenid'] = tokenizerBW.encode(stop_token)[0]
         spec['bos_tokenid'] = 0
         spec['pad_tokenid'] = 0
     spec['tdqm_disable'] = False
@@ -232,7 +236,11 @@ if __name__ == '__main__':
             fname = 'saved_models/%s_best.pth' % args.exp_name
 
         if os.path.exists(fname):
-            data = torch.load(fname)
+            if device == torch.device('cpu'):
+                print("on cpu")
+                data = torch.load(fname,map_location=device)
+            else:
+                data = torch.load(fname)
             torch.set_rng_state(data['torch_rng_state'])
             torch.cuda.set_rng_state(data['cuda_rng_state'])
             np.random.set_state(data['numpy_rng_state'])
@@ -252,6 +260,12 @@ if __name__ == '__main__':
         patience = 0
         optim = Adam(model.parameters(), lr=5e-6)
         print("Switching to RL")
+
+
+    if args.decoder == "stacked" and args.stck_gpt2:
+        evaluate_metrics = evaluate_metrics_gpt2
+    else:
+        evaluate_metrics = evaluate_metrics_standard
 
     ########################################################################################################################################################################
     print("Training starts")

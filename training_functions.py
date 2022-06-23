@@ -1,4 +1,5 @@
 
+
 def evaluate_loss(model, dataloader, loss_fn, spec, vocab_size):
     # Validation loss
     model.eval()
@@ -18,17 +19,17 @@ def evaluate_loss(model, dataloader, loss_fn, spec, vocab_size):
 
                 pbar.set_postfix(loss=running_loss / (it + 1))
                 pbar.update()
-                # if it > 10:
-                #     break
+
     val_loss = running_loss / len(dataloader)
     return val_loss
 
 
-def evaluate_metrics(model, dataloader, spec, transform_tok = None):
+def evaluate_metrics_standard(model, dataloader, spec, transform_tok = None):
     model.eval()
     gen = {}
     gts = {}
-    # i = 0
+    seq_len = 30
+
     print("now doing eval metrics")
     with tqdm(desc='Epoch %d - evaluation' % e, unit='it', total=len(dataloader), disable=spec['tdqm_disable']) as pbar:
         for it, (images, caps_gt) in enumerate(iter(dataloader)):
@@ -36,7 +37,7 @@ def evaluate_metrics(model, dataloader, spec, transform_tok = None):
             context_feats = context_feats[:,0,:,:]
             images, context_feats = images.to(device), context_feats.to(device)
             with torch.no_grad():
-                out, _ = model.beam_search(images, context_feats, 20, spec['eos_tokenid'], 5, out_size=1)
+                out, _ = model.beam_search(images, context_feats, seq_len, spec['eos_tokenid'], 5, out_size=1)
 
             caps_gen = [transform_tok.decode(sent) for sent in out] 
             caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen]
@@ -45,8 +46,7 @@ def evaluate_metrics(model, dataloader, spec, transform_tok = None):
                 gen['%d_%d' % (it, i)] = [gen_i, ]
                 gts['%d_%d' % (it, i)] = gts_i
             pbar.update()
-            # if it > 10:
-            #     break
+
     gts = evaluation.PTBTokenizer.tokenize(gts)
     gen = evaluation.PTBTokenizer.tokenize(gen)
     scores, _ = evaluation.compute_scores(gts, gen)
@@ -56,28 +56,27 @@ def evaluate_metrics_gpt2(model, dataloader, spec, transform_tok = None):
     model.eval()
     gen = {}
     gts = {}
-    # i = 0
+
     print("now doing eval metrics")
     with tqdm(desc='Epoch %d - evaluation' % e, unit='it', total=len(dataloader), disable=spec['tdqm_disable']) as pbar:
         for it, (images, caps_gt) in enumerate(iter(dataloader)):
             caps_gt, context_feats = caps_gt[0], torch.stack(caps_gt[1])
             context_feats = context_feats[:,0,:,:]
             images, context_feats = images.to(device), context_feats.to(device)
+            caps_gen = []
             with torch.no_grad():
                 enc_output, mask_enc = model.encoder(images)
-                d = model.decoder.forward_gen(seq, enc_output, mask_enc, contextfeat)
-                outptext = generate_beam(model, transform_tok, embed=prefix_embed)[0]
-                # out, _ = model.beam_search(images, context_feats, 20, spec['eos_tokenid'], 5, out_size=1)
-
-            caps_gen = [transform_tok.decode(sent) for sent in out] 
-            caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen]
+                prefix_embed = model.decoder(torch.ones((len(caps_gt), 6), dtype=int), enc_output, mask_enc, context_feats, gen_sent=True)
+                for prefix_i in prefix_embed:
+                    out = generate_beam(model.decoder, transform_tok, embed=prefix_i[None,:])[0]
+                    caps_gen.append(out)
 
             for i, (gts_i, gen_i) in enumerate(zip(caps_gt, caps_gen)):
                 gen['%d_%d' % (it, i)] = [gen_i, ]
                 gts['%d_%d' % (it, i)] = gts_i
             pbar.update()
-            # if it > 10:
-            #     break
+
+
     gts = evaluation.PTBTokenizer.tokenize(gts)
     gen = evaluation.PTBTokenizer.tokenize(gen)
     scores, _ = evaluation.compute_scores(gts, gen)
@@ -122,7 +121,7 @@ def train_scst(model, dataloader, optim, cider, spec, transform_tok):
     running_reward_baseline = .0
     model.train()
     running_loss = .0
-    seq_len = 20
+    seq_len = 30
     beam_size = 5
     print("trainin SCTS")
     with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=spec['tdqm_disable']) as pbar:

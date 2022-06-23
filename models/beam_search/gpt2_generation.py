@@ -24,7 +24,7 @@ def generate_beam(
     beam_size: int = 5,
     prompt=None,
     embed=None,
-    entry_length=67,
+    entry_length=30,
     temperature=1.0,
     stop_token: str = ".",
 ):

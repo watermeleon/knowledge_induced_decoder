@@ -8,7 +8,7 @@
             "request": "launch",
             "program": "test.py",
             "console": "integratedTerminal",
-            "args":["--exp_name" ,"vit_KG_pll_tiny_enc1",  "--features_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_prepool.h5", "--annotation_folder", "./annotations",  "--contextfeat_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", "--feat_size", "768","--batch_size", "2",  "--decoder", "parallel", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT-B/32", "--resume", "best","--device", "cpu", "--N_enc", "1", "--tf_model_conf", "tiny", "--use_faiss",  "--pll_dec", "2","--seg_token_kw", "--pt_token_emb"]
+            "args":["--exp_name" ,"vit_KG_pll_base_enc1_pttok_rc3",  "--features_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_prepool.h5", "--annotation_folder", "./annotations",  "--contextfeat_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", "--feat_size", "768","--batch_size", "2",  "--decoder", "parallel", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT-B/32", "--resume", "best","--device", "cpu", "--N_enc", "1", "--tf_model_conf", "base", "--use_faiss",  "--pll_dec", "2", "--num_relatedwords", "3", "--pt_token_emb"]
         }
 
         {
@@ -28,7 +28,7 @@
             "request": "launch",
             "program": "train.py",
             "console": "integratedTerminal",
-            "args":["--exp_name" ,"vit_temp",  "--features_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_prepool.h5", "--annotation_folder", "./annotations",  "--contextfeat_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", "--feat_size", "768","--batch_size", "10",  "--decoder", "stacked", "--tokenizer", "gpt2","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT-B/32",  "--no_rel_label" ,"--optimizer", "adamW", "--device", "cpu", "--use_faiss", "--pll_dec", "2", "--N_enc", "0", "--stck_gpt2"]
+            "args":["--exp_name" ,"vittemp",  "--features_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_prepool.h5", "--annotation_folder", "./annotations",  "--contextfeat_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", "--feat_size", "768","--batch_size", "10",  "--decoder", "stacked", "--tokenizer", "gpt2","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT-B/32",  "--no_rel_label" ,"--optimizer", "adamW", "--device", "cpu", "--use_faiss", "--pll_dec", "2", "--N_enc", "1", "--stck_gpt2","--num_relatedwords", "3", "--pt_token_emb", "--resume_best"]
         }
 
         {
