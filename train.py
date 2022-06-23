@@ -311,7 +311,8 @@ if __name__ == '__main__':
     spec = {}
     # do this because bert tokenizer doesn't sue bos, but cls, and sep i.s.o. eos..
     if args.tokenizer == "clip":
-        sample_txt = tokenizerBW("[PAD]").input_ids
+        spec['pad_token'] = '[PAD]'
+        sample_txt = tokenizerBW(spec['pad_token'] ).input_ids
         spec['eos_tokenid'] =  tokenizerBW.sep_token_id if cls_tok is not None else sample_txt[-1]
         spec['bos_tokenid'] =  tokenizerBW.cls_token_id if cls_tok is not None else sample_txt[0]
         spec['pad_tokenid'] = sample_txt[1]
@@ -320,6 +321,8 @@ if __name__ == '__main__':
         spec['eos_tokenid'] = tokenizerBW.encode(stop_token)[0]
         spec['bos_tokenid'] = 0
         spec['pad_tokenid'] = 0
+        spec['pad_token'] = tokenizerBW.decode(spec['pad_tokenid'])
+
     spec['tdqm_disable'] = False
     spec["device"] = device
     print("Selected specifications:", spec)
@@ -332,7 +335,7 @@ if __name__ == '__main__':
     # get the 1d clip emb features
     clipemb_field = ClipEmbDetectionsField(detections_path=args.contextfeat_path, load_in_tmp=False)
     # Pipeline for text
-    text_field = TextField(pad_token='[PAD]', lower=True, tokenize='spacy', remove_punctuation=True, nopoints=False, transform_tok = tokenizerBW, use_vocab= False, pad_token_id=pad_token_id)
+    text_field = TextField(pad_token=spec['pad_token'], lower=True, tokenize='spacy', remove_punctuation=True, nopoints=False, transform_tok = tokenizerBW, use_vocab= False, pad_token_id=pad_token_id)
     # Create the dataset
     dataset = COCO(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder,cocoid_field= clipemb_field)
     train_dataset, val_dataset, test_dataset = dataset.splits
