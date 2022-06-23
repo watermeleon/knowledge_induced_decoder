@@ -76,7 +76,7 @@ class KnowledgeGraph(object):
     spo_files - list of Path of *.spo files, or default kg name. e.g., ['HowNet']
     """
 
-    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None,  edge_select="random", spec=None, kw_size = 5, rw_size = 5, enc_model = "ViT-B_32", only_kw = False, norel= False, only_l2r = False, use_faiss = False, rc_posidx2 = False):
+    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None,  edge_select="random", spec=None, kw_size = 4, rw_size = 3, enc_model = "ViT-B_32", only_kw = False, norel= False, only_l2r = False, use_faiss = False, rc_posidx2 = False):
         self.only_kw = only_kw
         self.predicate = predicate
         self.kw_size = kw_size
