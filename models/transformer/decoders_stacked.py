@@ -166,7 +166,7 @@ class StackedPromptDecoder(Module):
                     print("item",item)
             # torch.set_printoptions(threshold=10_000)
 
-            print(x) # prints the whole tensor
+            # print(x) # prints the whole tensor
             print("seq3 is:", seq)
             torch.set_printoptions(profile="default") # reset
         # print("seq is:", seq)
