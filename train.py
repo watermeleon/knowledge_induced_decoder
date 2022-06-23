@@ -356,18 +356,19 @@ if __name__ == '__main__':
 
     knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW_clip, device = device, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw, norel= args.no_rel_label, only_l2r = args.rel_only_l2r, use_faiss = args.use_faiss, rc_posidx2 =args.rc_posidx2)
 
+    max_inp_seq= 256
     if args.decoder == "kg_infused":
         print("using normal dec")
-        decoder = PromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'],h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)
+        decoder = PromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'],h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)
     elif args.decoder == "parallel":
         print("using parallel dec")
-        decoder = ParallelPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model, pll_dec_type = args.pll_dec)
+        decoder = ParallelPromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model, pll_dec_type = args.pll_dec)
     elif args.decoder == "stacked":
         print("using stacked decoder")
-        decoder = StackedPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, one_kw_token=args.one_kw_token, d_model = args.d_model, seg_token_kw = args.seg_token_kw, use_gpt=args.stck_gpt2)
+        decoder = StackedPromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, one_kw_token=args.one_kw_token, d_model = args.d_model, seg_token_kw = args.seg_token_kw, use_gpt=args.stck_gpt2)
     elif args.decoder == "vanilla":
        print("using vanilla decoder")
-       decoder = VanillaDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, enc_model = args.enc_model, dropout=args.dropout, d_model = args.d_model)
+       decoder = VanillaDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, enc_model = args.enc_model, dropout=args.dropout, d_model = args.d_model)
  
     model = Transformer(spec['bos_tokenid'], encoder, decoder).to(device)
 
