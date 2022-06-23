@@ -119,7 +119,11 @@ class KnowledgeGraph(object):
         
         with open(pth_clipemb, 'rb') as f:
                     all_wordemb = pickle.load(f)
-        self.all_keywords = [word for word in all_wordemb["captions"]]
+        if device == "cpu":
+            self.all_keywords = [word.encode('latin-1').decode('utf-8') for word in all_wordemb["captions"]]
+        else:
+            self.all_keywords = [word for word in all_wordemb["captions"]]
+
         self.all_keywordembed = torch.stack([word for word in all_wordemb["clip_embedding"]]).to(self.device)
 
         if use_faiss == True:
