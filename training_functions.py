@@ -108,8 +108,8 @@ def train_xe(model, dataloader, optim, spec, vocab_size):
             pbar.set_postfix(loss=running_loss / (it + 1))
             pbar.update()
             scheduler.step()
-            if it > 1000:
-                break
+            # if it > 1000:
+            #     break
     loss = running_loss / len(dataloader)
     return loss
 
