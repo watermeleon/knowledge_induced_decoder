@@ -71,7 +71,7 @@ def evaluate_metrics_gpt2(model, dataloader, spec, transform_tok = None):
                 enc_output, mask_enc = model.encoder(images)
                 prefix_embed = model.decoder(torch.ones((len(caps_gt), 6), dtype=int, device=device).to(device), enc_output, mask_enc, context_feats, gen_sent=True)
                 for prefix_i in prefix_embed:
-                    out = generate_beam(model.decoder, transform_tok, embed=prefix_i[None,:])[0]
+                    out = generate2(model.decoder, transform_tok, embed=prefix_i[None,:])
                     caps_gen.append(out)
 
             for i, (gts_i, gen_i) in enumerate(zip(caps_gt, caps_gen)):
