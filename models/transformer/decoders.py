@@ -68,6 +68,7 @@ class embedding_table():
             self.get_emb = self.get_basic
             
     def get_basic(self, inp):
+        print("devices:", inp.device," weights: " ,self.weights.device)
         return F.embedding(inp, self.weights, padding_idx = self.padding_idx)
 
     def get_emb_reduced_dim(self, inp):
