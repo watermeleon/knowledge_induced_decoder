@@ -1,7 +1,7 @@
 
 import os
 
-os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+# os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 from ast import arg
@@ -28,7 +28,7 @@ from torch import autograd
 from transformers import AutoTokenizer, CLIPTokenizer, CLIPTokenizerFast, GPT2TokenizerFast, GPT2Tokenizer
 # from torch.utils.data import IterableDataset  
 
-from models.beam_search.gpt2_generation import generate_beam
+from models.beam_search.gpt2_generation import generate_beam , generate2
 
 import cProfile
 import pstats 
