@@ -13,7 +13,7 @@ import argparse
 import clip
 import ftfy
 
-def create_nested(clipmodel, pretok, tok_thresh, nested_cn_path):
+def create_nested(clipmodel, pretok, tok_thresh, nested_cn_path, cn_version):
     clipmodel = clipmodel.replace('/', '_')
 
     print("started creating nested dict...")
@@ -25,7 +25,7 @@ def create_nested(clipmodel, pretok, tok_thresh, nested_cn_path):
 
     pretok_label = "_pretok" if pretok else ""
     cn_wordfeats_path = "../../data_files/CN_feats/conceptNet_embedding_"+clipmodel+".pkl"
-    out_path = "../../data_files/CN_feats/concNet_nested_emb_"+clipmodel + pretok_label + "_maxtok.pkl"
+    out_path = "../../data_files/CN_feats/concNet_nested_emb_"+clipmodel + pretok_label +cn_version+ "_maxtok.pkl"
 
     # use the same tokenizer for both github and HF clip
     tokenizerBW =  CLIPTokenizerFast.from_pretrained("../models/tokenizers_stored/CLIPTokenizerFast")
@@ -75,9 +75,11 @@ if __name__ == '__main__':
     parser.add_argument('--clip_model', default="ViT-B/32", choices=('RN50x4', 'ViT-B/32'))
     parser.add_argument('--nested_cn_path', type=str, default="../../data_files/CN_feats/conceptnet_filt_nest_labels.pkl")    
     parser.add_argument('--pretok', action='store_true')
+    parser.add_argument('--cn_version', type=str, default="")
+
     parser.add_argument('--tok_thresh', type=int, default=4)
 
     args = parser.parse_args()
 
-    create_nested(args.clip_model, args.pretok, args.tok_thresh, args.nested_cn_path)
+    create_nested(args.clip_model, args.pretok, args.tok_thresh, args.nested_cn_path, args.cn_version)
 
