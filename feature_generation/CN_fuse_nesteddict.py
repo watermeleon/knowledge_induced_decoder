@@ -13,12 +13,12 @@ import argparse
 import clip
 import ftfy
 
-def create_nested(clipmodel, pretok, tok_thresh):
+def create_nested(clipmodel, pretok, tok_thresh, nested_cn_path):
     clipmodel = clipmodel.replace('/', '_')
 
     print("started creating nested dict...")
     # load the nested dict
-    pth_clipemb = "../../data_files/CN_feats/conceptnet_filt_nest_labels.pkl"
+    pth_clipemb = nested_cn_path
     with open(pth_clipemb, 'rb') as f:
                 CN_dict = pickle.load(f)
     print("hi")
@@ -73,10 +73,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # parser.add_argument('--clipmodel', default="clip_github", choices=('clip_github','huggingface'))
     parser.add_argument('--clip_model', default="ViT-B/32", choices=('RN50x4', 'ViT-B/32'))
+    parser.add_argument('--nested_cn_path', type=str, default="../../data_files/CN_feats/conceptnet_filt_nest_labels.pkl")    
     parser.add_argument('--pretok', action='store_true')
     parser.add_argument('--tok_thresh', type=int, default=4)
 
     args = parser.parse_args()
 
-    create_nested(args.clip_model, args.pretok, args.tok_thresh)
+    create_nested(args.clip_model, args.pretok, args.tok_thresh, args.nested_cn_path)
 
