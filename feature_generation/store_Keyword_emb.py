@@ -16,12 +16,12 @@ from tqdm import tqdm
 
 
 
-def main(clipmodel_name: str):
+def main(clipmodel_name: str, kw_file, args):
     clipmodel = clipmodel_name.replace('/', '_')
 
     print("starting now ...")
     # load the keywords
-    f = open('../../data_files/openwebtext_10th.csv', 'r', encoding="UTF-8")
+    f = open(kw_file, 'r', encoding="UTF-8")
     with f:
         reader = csv.reader(f)
         keywords = [word[0] for word in reader]
@@ -36,7 +36,7 @@ def main(clipmodel_name: str):
 
     device = torch.device('cuda')
     model, _ = clip.load(clipmodel_name, device=device)
-    out_path = "../../data_files/keyword_embedding_"+clipmodel+".pkl"
+    out_path = "../../data_files/keyword_embedding_" + clipmodel + args.cn_version + ".pkl"
     file_to_store = open(out_path, "wb")
 
 
@@ -60,6 +60,9 @@ def main(clipmodel_name: str):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--clip_model', default="ViT-B/32", choices=('RN50x4', 'ViT-B/32'))
+    parser.add_argument('--kw_file', type=str, default='../../data_files/openwebtext_10th.csv')
+    parser.add_argument('--cn_version', type=str, default="")
+
 
     args = parser.parse_args()
-    exit(main(args.clip_model))
+    exit(main(args.clip_model, args.kw_file, args))
