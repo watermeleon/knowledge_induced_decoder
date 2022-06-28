@@ -175,12 +175,13 @@ if __name__ == '__main__':
     # Create the dataset
     dataset = COCO(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder,cocoid_field= clipemb_field)
     train_dataset, val_dataset, test_dataset = dataset.splits
-    if not os.path.isfile('vocab_%s.pkl' % args.exp_name):
-        print("Building vocabulary")
+    baseline_vocab = "vocab_coco_baseline_vocab.pkl"
+    if not os.path.isfile(baseline_vocab):
+        print("Building vocabulary: ERROR this shouldn't be happening")
         text_field.build_vocab(train_dataset, val_dataset, min_freq=5)
         pickle.dump(text_field.vocab, open('vocab_%s.pkl' % args.exp_name, 'wb'))
     else:
-        text_field.vocab = pickle.load(open('vocab_%s.pkl' % args.exp_name, 'rb'))
+        text_field.vocab = pickle.load(open(baseline_vocab, 'rb'))
 
     # Model and dataloaders
     inp_feat_size = args.feat_size
