@@ -101,6 +101,7 @@ if __name__ == '__main__':
     parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb','clipemb_pretok'])
     parser.add_argument('--use_faiss', action='store_true')
     parser.add_argument('--rc_posidx2', action='store_true')
+    parser.add_argument('--cn_version', type=str, default="",  choices=["", "noname",'imgnet1k'])
 
 
     args = parser.parse_args()
@@ -191,7 +192,7 @@ if __name__ == '__main__':
 
     seg_token = args.seg_token == "True"
 
-    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW_clip, device = device, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw, norel= args.no_rel_label, only_l2r = args.rel_only_l2r, use_faiss = args.use_faiss, rc_posidx2 =args.rc_posidx2)
+    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW_clip, device = device, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw, norel= args.no_rel_label, only_l2r = args.rel_only_l2r, use_faiss = args.use_faiss, rc_posidx2 =args.rc_posidx2, cn_version=args.cn_version)
 
     max_inp_seq= 256
     if args.decoder == "kg_infused":

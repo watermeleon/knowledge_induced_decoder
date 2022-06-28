@@ -76,7 +76,7 @@ class KnowledgeGraph(object):
     spo_files - list of Path of *.spo files, or default kg name. e.g., ['HowNet']
     """
 
-    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None,  edge_select="random", spec=None, kw_size = 4, rw_size = 3, enc_model = "ViT-B_32", only_kw = False, norel= False, only_l2r = False, use_faiss = False, rc_posidx2 = False):
+    def __init__(self, predicate=False, tokenizer = None, transform_tok = None, device= None,  edge_select="random", spec=None, kw_size = 4, rw_size = 3, enc_model = "ViT-B_32", only_kw = False, norel= False, only_l2r = False, use_faiss = False, rc_posidx2 = False, cn_version=""):
         self.only_kw = only_kw
         self.predicate = predicate
         self.kw_size = kw_size
@@ -95,7 +95,7 @@ class KnowledgeGraph(object):
         if edge_select == "clipemb_pretok":
             pretok = "_pretok"
             edge_select = "clipemb"
-        graph_path = '../data_files/CN_feats/concNet_nested_emb_'+ str(enc_model)+ pretok +'_maxtok.pkl'
+        graph_path = '../data_files/CN_feats/concNet_nested_emb_'+ str(enc_model)+ pretok +cn_version+'_maxtok.pkl'
 
         with open(graph_path, 'rb') as f:
                         self.lookupdict = pickle.load(f)
@@ -115,7 +115,7 @@ class KnowledgeGraph(object):
             self.remlist = [spec["bos_tokenid"], spec["eos_tokenid"]]
     
         # pth_clipemb = "../data_files/keyword_embedding_"+str(enc_model)+".pkl"
-        pth_clipemb = "../data_files/keyword_embedding_ViT-B_32.pkl"
+        pth_clipemb = "../data_files/keyword_embedding_ViT-B_32"+cn_version+".pkl"
         
         with open(pth_clipemb, 'rb') as f:
                     all_wordemb = pickle.load(f)
