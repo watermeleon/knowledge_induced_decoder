@@ -4,7 +4,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import random
 from data import ImageDetectionsField, TextField, RawField, ClipEmbDetectionsField
-from data import COCO, DataLoader
+from data import COCO, DataLoader, NoCaps
 import evaluation
 # from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory
 from models.transformer import Transformer, MemoryAugmentedEncoder, PromptDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder, ParallelPromptDecoder , StackedPromptDecoder
@@ -110,6 +110,8 @@ if __name__ == '__main__':
     parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb','clipemb_pretok'])
     parser.add_argument('--use_faiss', action='store_true')
 
+    #dataset
+    parser.add_argument('--nocaps', action='store_true')
 
     args = parser.parse_args()
     print(args)
@@ -162,16 +164,26 @@ if __name__ == '__main__':
     clipemb_field = ClipEmbDetectionsField(detections_path=args.contextfeat_path, load_in_tmp=False)
     # Pipeline for text
     text_field = TextField(pad_token='[PAD]', lower=True, tokenize='spacy', remove_punctuation=True, nopoints=False, transform_tok = tokenizerBW, use_vocab= False, pad_token_id=pad_token_id)
+
     # Create the dataset
-    dataset = COCO(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder,cocoid_field= clipemb_field)
+    if args.nocaps:
+        dataset = NoCaps(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder,cocoid_field= clipemb_field)
+        train_dataset, val_dataset, test_dataset = dataset.splits
+        #big time cheating:
+        test_dataset = val_dataset
+    else:
+        dataset = COCO(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder,cocoid_field= clipemb_field)
+        train_dataset, val_dataset, test_dataset = dataset.splits
     
-    train_dataset, val_dataset, test_dataset = dataset.splits
-    if not os.path.isfile('vocab_%s.pkl' % args.exp_name):
-        print("Building vocabulary")
+
+
+    baseline_vocab = "vocab_coco_baseline_vocab.pkl"
+    if not os.path.isfile(baseline_vocab):
+        print("Building vocabulary: ERROR this shouldn't be happening")
         text_field.build_vocab(train_dataset, val_dataset, min_freq=5)
         pickle.dump(text_field.vocab, open('vocab_%s.pkl' % args.exp_name, 'wb'))
     else:
-        text_field.vocab = pickle.load(open('vocab_%s.pkl' % args.exp_name, 'rb'))
+        text_field.vocab = pickle.load(open(baseline_vocab, 'rb'))
 
     # Model and dataloaders
     inp_feat_size = args.feat_size
@@ -187,7 +199,7 @@ if __name__ == '__main__':
         decoder = PromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'],h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)
     elif args.decoder == "parallel":
         print("using parallel dec")
-        decoder = ParallelPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model,pll_dec_type = args.pll_dec))
+        decoder = ParallelPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model,pll_dec_type = args.pll_dec)
     elif args.decoder == "stacked":
         print("using stacked decoder")
         decoder = StackedPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, one_kw_token=args.one_kw_token, d_model = args.d_model)
@@ -230,18 +242,18 @@ if os.path.exists(fname):
     dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size, num_workers=args.workers,shuffle=True)
 
     # Sampling options: ['topk', 'beam', 'nucleus'])
-    variationlist = [("nucleus", 1),("topk", 1), ("beam", 1)]
-    #  ("topk", 0.2),("topk", 2)]
-    for sampling_method , sampling_temp in variationlist:
-        model.sampling_temp = sampling_temp
-        model.sampling_method = sampling_method
-        output_path = "./generated_sentences/"
-        Path(output_path).mkdir(parents=True, exist_ok=True)
-        out_file = args.exp_name +"_coco_" +str(sampling_method) +"_"+str(sampling_temp)+".json"
-        out_file = output_path + out_file
-        print("Output path:", out_file)
+    # variationlist = [("nucleus", 1),("topk", 1), ("beam", 1)]
+    # #  ("topk", 0.2),("topk", 2)]
+    # for sampling_method , sampling_temp in variationlist:
+    #     model.sampling_temp = sampling_temp
+    #     model.sampling_method = sampling_method
+    output_path = "./generated_sentences/"
+    Path(output_path).mkdir(parents=True, exist_ok=True)
+    out_file = args.exp_name +"_coco_" +str("beam") +"_"+str(1)+".json"
+    out_file = output_path + out_file
+    print("Output path:", out_file)
 
-        gen_captions(model, dict_dataloader_test, spec, tokenizerBW_dec, out_file)
+    gen_captions(model, dict_dataloader_test, spec, tokenizerBW_dec, out_file)
 
 else:
     print("path doesn't exist:", fname)

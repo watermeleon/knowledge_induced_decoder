@@ -3,7 +3,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import random
 from data import ImageDetectionsField, TextField, RawField, ClipEmbDetectionsField
-from data import COCO, DataLoader
+from data import COCO, DataLoader, NoCaps
 import evaluation
 # from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory
 from models.transformer import Transformer, MemoryAugmentedEncoder, PromptDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder, ParallelPromptDecoder , StackedPromptDecoder
@@ -29,7 +29,6 @@ def predict_captions(model, dataloader, spec, transform_tok):
     gts = {}
     with tqdm(desc='Evaluation', unit='it', total=len(dataloader)) as pbar:
         for it, (images, caps_gt) in enumerate(iter(dataloader)):
-            # images = images.to(device)
             images, img_ids = images
             print("image ids :")
             caps_gt, context_feats = caps_gt[0], torch.stack(caps_gt[1])
@@ -108,7 +107,7 @@ if __name__ == '__main__':
     parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb','clipemb_pretok'])
     parser.add_argument('--use_faiss', action='store_true')
     parser.add_argument('--rc_posidx2', action='store_true')
-
+    parser.add_argument('--nocaps', action='store_true')
 
     args = parser.parse_args()
     print(args)
@@ -161,15 +160,24 @@ if __name__ == '__main__':
     clipemb_field = ClipEmbDetectionsField(detections_path=args.contextfeat_path, load_in_tmp=False)
     # Pipeline for text
     text_field = TextField(pad_token='[PAD]', lower=True, tokenize='spacy', remove_punctuation=True, nopoints=False, transform_tok = tokenizerBW, use_vocab= False, pad_token_id=pad_token_id)
-    # Create the dataset
-    dataset = COCO(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder,cocoid_field= clipemb_field)
-    train_dataset, val_dataset, test_dataset = dataset.splits
-    if not os.path.isfile('vocab_%s.pkl' % args.exp_name):
-        print("Building vocabulary")
+    
+     # Create the dataset
+    if args.nocaps:
+        dataset = NoCaps(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder,cocoid_field= clipemb_field)
+        train_dataset, val_dataset, test_dataset = dataset.splits
+        #big time cheating:
+        test_dataset = val_dataset
+    else:
+        dataset = COCO(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder,cocoid_field= clipemb_field)
+        train_dataset, val_dataset, test_dataset = dataset.splits    
+    
+    baseline_vocab = "vocab_coco_baseline_vocab.pkl"
+    if not os.path.isfile(baseline_vocab):
+        print("Building vocabulary: ERROR this shouldn't be happening")
         text_field.build_vocab(train_dataset, val_dataset, min_freq=5)
         pickle.dump(text_field.vocab, open('vocab_%s.pkl' % args.exp_name, 'wb'))
     else:
-        text_field.vocab = pickle.load(open('vocab_%s.pkl' % args.exp_name, 'rb'))
+        text_field.vocab = pickle.load(open(baseline_vocab, 'rb'))
 
     # Model and dataloaders
     inp_feat_size = args.feat_size
