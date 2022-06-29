@@ -87,8 +87,8 @@ class ImageDetectionsField(RawField):
         super(ImageDetectionsField, self).__init__(preprocessing, postprocessing)
 
     def preprocess(self, x, avoid_precomp=False):
-        if self.print_img_name:
-            print("field img:", x)
+        # if self.print_img_name:
+        #     print("field img:", x)
 
         image_id = int(x.split('_')[-1].split('.')[0])
         # print("id is here:", image_id, "path is:", self.detections_path)
