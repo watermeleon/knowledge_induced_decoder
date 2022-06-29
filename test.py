@@ -40,7 +40,6 @@ def predict_captions(model, dataloader, spec, transform_tok):
             caps_gen = [transform_tok.decode(sent) for sent in out] 
             caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen]
             print("capsgen:", caps_gen)
-                        print("caps GT:", caps_gt, "\n")
 
             caps_gt = [tuple([sent.encode('latin-1').decode('utf-8') for sent in img_batch]) for img_batch in caps_gt]
             print("caps GT:", caps_gt, "\n")
