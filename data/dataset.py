@@ -183,6 +183,101 @@ class PairedDataset(Dataset):
     def splits(self):
         raise NotImplementedError
 
+class NoCaps(PairedDataset):
+    def __init__(self, image_field, text_field, img_root, ann_root, id_root=None, use_restval=False,
+                 cut_validation=False, cocoid_field=None):
+        roots = {}
+
+        roots['val'] = {
+            'img': os.path.join(img_root, 'NoCapsval'),
+            'cap': os.path.join(ann_root, 'nocaps_val_4500_captions.json')
+        }
+        # roots['test'] = {
+        #     'img': os.path.join(img_root, 'val2014'),
+        #     'cap': os.path.join(ann_root, 'captions_val2014.json')
+        # }
+
+
+        # if id_root is not None:
+        #     ids = {}
+        #     ids['train'] = np.load(os.path.join(id_root, 'coco_train_ids.npy'))
+        #     ids['val'] = np.load(os.path.join(id_root, 'coco_dev_ids.npy'))
+        #     if cut_validation:
+        #         ids['val'] = ids['val'][:5000]
+        #     ids['test'] = np.load(os.path.join(id_root, 'coco_test_ids.npy'))
+        #     ids['trainrestval'] = (
+        #         ids['train'],
+        #         np.load(os.path.join(id_root, 'coco_restval_ids.npy')))
+
+        #     if use_restval:
+        #         roots['train'] = roots['trainrestval']
+        #         ids['train'] = ids['trainrestval']
+        # else:
+        #     ids = None
+
+        with nostdout():
+            _, self.val_examples, _ = self.get_samples(roots, None)
+        examples = self.val_examples 
+        super(NoCaps, self).__init__(examples, {'image': image_field, 'text': text_field, "img_id":cocoid_field})
+
+    @property
+    def splits(self):
+        # train_split = PairedDataset(self.train_examples, self.fields)
+        val_split = PairedDataset(self.val_examples, self.fields)
+        # test_split = PairedDataset(self.test_examples, self.fields)
+        return None, val_split, None
+
+    @classmethod
+    def get_samples(cls, roots, ids_dataset=None):
+        train_samples = []
+        val_samples = []
+        test_samples = []
+
+        for split in ['val']:
+            if isinstance(roots[split]['cap'], tuple):
+                coco_dataset = (pyCOCO(roots[split]['cap'][0]), pyCOCO(roots[split]['cap'][1]))
+                root = roots[split]['img']
+            else:
+                coco_dataset = (pyCOCO(roots[split]['cap']),)
+                root = (roots[split]['img'],)
+
+            if ids_dataset is None:
+                ids = list(coco_dataset[0].anns.keys())
+            else:
+                ids = ids_dataset[split]
+
+            if isinstance(ids, tuple):
+                bp = len(ids[0])
+                ids = list(ids[0]) + list(ids[1])
+            else:
+                bp = len(ids)
+
+            for index in range(len(ids)):
+                if index < bp:
+                    coco = coco_dataset[0]
+                    img_root = root[0]
+                else:
+                    coco = coco_dataset[1]
+                    img_root = root[1]
+
+                ann_id = ids[index]
+                caption = coco.anns[ann_id]['caption']
+                img_id = coco.anns[ann_id]['image_id']
+                # filename = coco.loadImgs(img_id)[0]['file_name']
+                filename = "shittytitle_" + str(img_id) + ".jpg"
+
+
+                example = Example.fromdict({'image': os.path.join(img_root, filename), 'text': caption, 'img_id' : img_id})
+
+                if split == 'train':
+                    train_samples.append(example)
+                elif split == 'val':
+                    val_samples.append(example)
+                elif split == 'test':
+                    test_samples.append(example)
+        return train_samples, val_samples, test_samples
+
+
 
 class COCO(PairedDataset):
     def __init__(self, image_field, text_field, img_root, ann_root, id_root=None, use_restval=True,

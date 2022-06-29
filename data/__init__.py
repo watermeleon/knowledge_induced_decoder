@@ -1,5 +1,5 @@
 from .field import RawField, ImageDetectionsField, TextField, ClipEmbDetectionsField
-from .dataset import COCO
+from .dataset import COCO, NoCaps
 from torch.utils.data import DataLoader as TorchDataLoader
 
 class DataLoader(TorchDataLoader):
