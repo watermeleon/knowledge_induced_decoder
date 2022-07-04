@@ -29,10 +29,10 @@ from treelib import Node, Tree
 import faiss
 class empty_fais_knn(object):
     def __init__(self, words):
-        words = np.squeeze(words).tolist()
-        if len(words) == 1:
-            words = [words]
-        self.words = words
+        words = np.squeeze(words)
+        if len(words.shape) == 1:
+            words = words[None,:]
+        self.words = words.tolist()
 
     def get_nn(self,q_emb):
         print("shape returned empty:", np.array(self.words).shape)
