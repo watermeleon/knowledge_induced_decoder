@@ -30,12 +30,12 @@ import faiss
 class empty_fais_knn(object):
     def __init__(self, words):
         words = np.squeeze(words)
-        if len(words.shape) == 1:
+        if len(words.shape) == 1 and words.shape[0] !=0:
             words = words[None,:]
         self.words = words.tolist()
 
     def get_nn(self,q_emb):
-        print("shape returned empty:", np.array(self.words).shape)
+        print("shape returned empty:", np.array(self.words).shape, self.words)
 
         return self.words
 
@@ -55,7 +55,7 @@ class get_fais_knn(object):
         faiss.normalize_L2(q_emb)
         _, indices = self.index.search(q_emb, self.k)
         nn_words = np.squeeze(self.words[indices]).tolist()
-        print("shape returned faiss:", np.array(nn_words).shape)
+        print("shape returned faiss:", np.array(nn_words).shape, nn_words)
         if self.k == 1:
             nn_words = [nn_words]
         return nn_words
