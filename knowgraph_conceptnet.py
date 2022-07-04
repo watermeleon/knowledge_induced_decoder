@@ -36,11 +36,11 @@ class empty_fais_knn(object):
         # self.words = words.tolist()
 
         words = np.squeeze(words).tolist()
-        if np.array(self.words).shape == (3,):
+        if np.array(words).shape == (3,):
             # and words.shape[0] !=0
             words = [words]
         self.words = words
-        
+
         if np.array(self.words).shape == (3,):
             tempselfwords = np.array(self.words)
 
