@@ -29,9 +29,14 @@ from treelib import Node, Tree
 import faiss
 class empty_fais_knn(object):
     def __init__(self, words):
-        self.words = np.squeeze(words)
+        words = np.squeeze(words).tolist()
+        if len(words) == 1:
+            words = [words]
+        self.words = words
 
     def get_nn(self,q_emb):
+        print("shape returned empty:", nn_words.shape)
+
         return self.words
 
 #  FAISS cosine distance
@@ -50,6 +55,7 @@ class get_fais_knn(object):
         faiss.normalize_L2(q_emb)
         _, indices = self.index.search(q_emb, self.k)
         nn_words = np.squeeze(self.words[indices]).tolist()
+        print("shape returned faiss:", nn_words.shape)
         if self.k == 1:
             nn_words = [nn_words]
         return nn_words
