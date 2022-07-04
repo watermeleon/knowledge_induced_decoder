@@ -200,7 +200,7 @@ if __name__ == '__main__':
         decoder = PromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'],h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)
     elif args.decoder == "parallel":
         print("using parallel dec")
-        decoder = ParallelPromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model, pll_dec_type = args.pll_dec)
+        decoder = ParallelPromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model, pll_dec_type = args.pll_dec, seg_token_kw = args.seg_token_kw)
     elif args.decoder == "stacked":
         print("using stacked decoder")
         decoder = StackedPromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, one_kw_token=args.one_kw_token, d_model = args.d_model, seg_token_kw = args.seg_token_kw, use_gpt=args.stck_gpt2)
