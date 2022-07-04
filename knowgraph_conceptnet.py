@@ -30,9 +30,14 @@ import faiss
 class empty_fais_knn(object):
     def __init__(self, words):
         words = np.squeeze(words)
-        if len(words.shape) == 1 and words.shape[0] !=0:
+        if len(words.shape) == 1:
+            # and words.shape[0] !=0
             words = words[None,:]
+        
         self.words = words.tolist()
+        if np.array(self.words) == (3,):
+            print("len:", len(words.shape), "len==1:", len(words.shape) == 1)
+
 
     def get_nn(self,q_emb):
         print("shape returned empty:", np.array(self.words).shape, self.words)
