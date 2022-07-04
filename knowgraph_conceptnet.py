@@ -35,7 +35,7 @@ class empty_fais_knn(object):
             words = words[None,:]
         
         self.words = words.tolist()
-        if np.array(self.words) == (3,):
+        if np.array(self.words).shape == (3,):
             print("len:", len(words.shape), "len==1:", len(words.shape) == 1)
 
 
