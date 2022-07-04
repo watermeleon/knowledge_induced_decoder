@@ -237,6 +237,33 @@ class KnowledgeGraph(object):
 
         return self.add_knowledge_with_vm(sent_batch, image_emb=all_img_embs, max_edges=self.rw_size, add_pad=True, max_length=64, prefix_size = None)
 
+    def get_KW_RC(self, contextfeat):
+        # retrieve the Keywords for each contextfeat and call the knowledgewithvm
+        all_img_embs = contextfeat
+        sent_batch = []
+        newcontfeat = contextfeat.float().squeeze(1).clone().detach().cpu().numpy()
+        sent_batch = self.kw_sim.get_nn(newcontfeat) 
+
+        split_sent_batch = self.tokenize_wordid(sent_batch)
+
+        RC_batch = []
+        for sent_it, split_sent in enumerate(split_sent_batch):
+            RC_sent = []
+            split_sent_vanilla = sent_batch[sent_it]
+
+            for token_it, token in enumerate(split_sent):  
+                unigram = split_sent_vanilla[token_it]
+                if str(unigram) not in self.special_tags:
+                    entities_words = self.get_ranked_edges(unigram, max_edges = self.rw_size, image_emb = all_img_embs[sent_it])
+                entities,  order_rel = [], []
+                # print("entities words:", entities_words)
+                if len(entities_words) != 0:
+                    entities , order_rel = self.entities_tokenized_pretok(entities_words)
+                RC_sent.append(entities)
+            RC_batch.append(RC_sent)
+        return sent_batch, RC_sent
+
+        
     def gen_imagegraph(self,tree,  unigram, entities, order_rel):
         tree.create_node(unigram, unigram, parent="root") 
         count = 0

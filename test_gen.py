@@ -52,9 +52,35 @@ def gen_captions(model, dataloader, spec, transform_tok, out_file):
 
     with open(out_file, 'w') as f:
         json.dump(all_captions, f)
-    # return scores
+
+def gen_KW_RC(model, dataloader, spec, transform_tok, out_file):
+    import itertools
+    model.eval()
+
+    all_captions = []
+    with tqdm(desc='Evaluation', unit='it', total=len(dataloader)) as pbar:
+        for it, (images, caps_gt) in enumerate(iter(dataloader)):
+            # images = images.to(device)
+            images, img_ids = images
+            context_feats =  torch.stack(caps_gt[1])
+            context_feats = context_feats[:,0,:,:]
+            images, context_feats = images.to(device), context_feats.to(device)
+            with torch.no_grad():
+                # out, _ = model.beam_search(images, context_feats, 40, spec['eos_tokenid'], 5, out_size=1)
+                KW_batch, RC_batch = model.decoder.KG.get_KW_RC(context_feats)
 
 
+            # caps_gen = [transform_tok.decode(sent) for sent in out] 
+            # caps_gen = [sent.split("<|endoftext|>")[0].strip() for sent in caps_gen]
+
+            for (img_id, kw_i, rc_i) in zip(img_ids, KW_batch, RC_batch):
+                entry = {"kw": kw_i, "rc": rc_i, "image_id":img_id.item() }
+                all_captions.append(entry)
+            # break
+            pbar.update()
+
+    with open(out_file, 'w') as f:
+        json.dump(all_captions, f)
 
 if __name__ == '__main__':
 
