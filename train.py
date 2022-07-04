@@ -121,7 +121,7 @@ if __name__ == '__main__':
             args.d_model = 384
             args.head = 6
 
-    wandb.init(project="hyptuning2" ,name=args.exp_name, entity="watermelontology")
+    wandb.init(project="hyptuning3" ,name=args.exp_name, entity="watermelontology")
     wandb.config.update(args)
     print(wandb.config)
 
