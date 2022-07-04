@@ -36,7 +36,10 @@ class empty_fais_knn(object):
         
         self.words = words.tolist()
         if np.array(self.words).shape == (3,):
-            print("len:", len(words.shape), "len==1:", len(words.shape) == 1)
+            tempselfwords = np.array(self.words)
+
+            print("words:", words, "selfwords:", self.words,"arrayselfwords:", tempselfwords)
+            print("len:", len(tempselfwords.shape), "len==1:", len(tempselfwords.shape) == 1)
 
 
     def get_nn(self,q_emb):
