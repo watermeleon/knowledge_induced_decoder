@@ -35,7 +35,7 @@ class empty_fais_knn(object):
         self.words = words
 
     def get_nn(self,q_emb):
-        print("shape returned empty:", np.array(nn_words).shape)
+        print("shape returned empty:", np.array(self.words).shape)
 
         return self.words
 
