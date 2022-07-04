@@ -29,12 +29,18 @@ from treelib import Node, Tree
 import faiss
 class empty_fais_knn(object):
     def __init__(self, words):
-        words = np.squeeze(words)
-        if len(words.shape) == 1:
+        # words = np.squeeze(words)
+        # if len(words.shape) == 1:
+        #     # and words.shape[0] !=0
+        #     words = words[None,:]
+        # self.words = words.tolist()
+
+        words = np.squeeze(words).tolist()
+        if np.array(self.words).shape == (3,):
             # and words.shape[0] !=0
-            words = words[None,:]
+            words = [words]
+        self.words = words
         
-        self.words = words.tolist()
         if np.array(self.words).shape == (3,):
             tempselfwords = np.array(self.words)
 
