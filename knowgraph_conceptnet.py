@@ -35,7 +35,7 @@ class empty_fais_knn(object):
         self.words = words
 
     def get_nn(self,q_emb):
-        print("shape returned empty:", nn_words.shape)
+        print("shape returned empty:", np.array(nn_words).shape)
 
         return self.words
 
@@ -55,7 +55,7 @@ class get_fais_knn(object):
         faiss.normalize_L2(q_emb)
         _, indices = self.index.search(q_emb, self.k)
         nn_words = np.squeeze(self.words[indices]).tolist()
-        print("shape returned faiss:", nn_words.shape)
+        print("shape returned faiss:", np.array(nn_words).shape)
         if self.k == 1:
             nn_words = [nn_words]
         return nn_words
