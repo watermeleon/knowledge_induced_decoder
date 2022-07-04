@@ -18,22 +18,22 @@
             "console": "integratedTerminal",
             "args":["--exp_name" ,"vit_KG_pll_base_enc1_pttok_rc3",  "--features_path", "/media/leonardo/Floppy/clipemb_nocaps_ViT-B_32_prepoolfeats_val.h5", "--annotation_folder", "../Datasets/NoCaps/",  "--contextfeat_path", "/media/leonardo/Floppy/clipemb_nocaps_ViT-B_32_contextfeat_val.h5", "--feat_size", "768","--batch_size", "2",  "--decoder", "parallel", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT-B/32", "--resume", "best", "--device", "cpu", "--N_enc", "1", "--tf_model_conf", "base", "--use_faiss","--pll_dec", "2", "--num_relatedwords", "3", "--pt_token_emb", "--nocaps"]
         }
-        {
-            "name": "Python: test_gen.py",
-            "type": "python",
-            "request": "launch",
-            "program": "test_gen.py",
-            "console": "integratedTerminal",
-            "args":["--exp_name" ,"vit_KG_pll_base_enc1_pttok_rc3",  "--features_path", "/media/leonardo/Floppy/clipemb_nocaps_ViT-B_32_prepoolfeats_val.h5", "--annotation_folder", "../Datasets/NoCaps/",  "--contextfeat_path", "/media/leonardo/Floppy/clipemb_nocaps_ViT-B_32_contextfeat_val.h5", "--feat_size", "768","--batch_size", "2",  "--decoder", "parallel", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT-B/32", "--resume", "best", "--device", "cpu", "--N_enc", "1", "--tf_model_conf", "base", "--use_faiss","--pll_dec", "2", "--num_relatedwords", "3", "--pt_token_emb", "--nocaps"]
-        }
         // {
         //     "name": "Python: test_gen.py",
         //     "type": "python",
         //     "request": "launch",
         //     "program": "test_gen.py",
         //     "console": "integratedTerminal",
-        //     "args":["--exp_name" ,"vit_KG_pll_base_enc1_pttok_rc3",  "--features_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_prepool.h5", "--annotation_folder", "../Datasets/NoCaps/",  "--contextfeat_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", "--feat_size", "768","--batch_size", "2",  "--decoder", "parallel", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT-B/32", "--resume", "best", "--device", "cpu", "--N_enc", "1", "--tf_model_conf", "base", "--use_faiss","--pll_dec", "2", "--num_relatedwords", "3", "--pt_token_emb", "--nocaps"]
+        //     "args":["--exp_name" ,"vit_KG_pll_base_enc1_pttok_rc3",  "--features_path", "/media/leonardo/Floppy/clipemb_nocaps_ViT-B_32_prepoolfeats_val.h5", "--annotation_folder", "../Datasets/NoCaps/",  "--contextfeat_path", "/media/leonardo/Floppy/clipemb_nocaps_ViT-B_32_contextfeat_val.h5", "--feat_size", "768","--batch_size", "2",  "--decoder", "parallel", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT-B/32", "--resume", "best", "--device", "cpu", "--N_enc", "1", "--tf_model_conf", "base", "--use_faiss","--pll_dec", "2", "--num_relatedwords", "3", "--pt_token_emb", "--nocaps"]
         // }
+        {
+            "name": "Python: test_gen.py",
+            "type": "python",
+            "request": "launch",
+            "program": "test_gen.py",
+            "console": "integratedTerminal",
+            "args":["--exp_name" ,"vit_KG_pll_base_enc1_pttok_rc3",  "--features_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_prepool.h5", "--annotation_folder", "./annotations",  "--contextfeat_path", "/media/leonardo/Floppy/clip_emb_ViT32_hf_contextfeat_save.h5", "--feat_size", "768","--batch_size", "2",  "--decoder", "parallel", "--tokenizer", "clip","--edge_select", "clipemb_pretok", "--seg_token", "True", "--enc_model", "ViT-B/32", "--resume", "best", "--device", "cpu", "--N_enc", "1", "--tf_model_conf", "base", "--use_faiss","--pll_dec", "2", "--num_relatedwords", "3", "--pt_token_emb"]
+        }
 
 
         {

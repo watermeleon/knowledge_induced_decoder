@@ -194,7 +194,7 @@ if __name__ == '__main__':
 
     knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW_clip, device = device, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw, norel= args.no_rel_label, only_l2r = args.rel_only_l2r, use_faiss = args.use_faiss, rc_posidx2 =args.rc_posidx2, cn_version=args.cn_version)
 
-    max_inp_seq= 256
+    max_inp_seq= 128
     if args.decoder == "kg_infused":
         print("using normal dec")
         decoder = PromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'],h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)
