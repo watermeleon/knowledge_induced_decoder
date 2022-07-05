@@ -31,7 +31,7 @@ def evaluate_metrics_standard(model, dataloader, spec, transform_tok = None):
     model.eval()
     gen = {}
     gts = {}
-    seq_len = 30
+    seq_len = 20
 
     print("now doing eval metrics")
     with tqdm(desc='Epoch %d - evaluation' % e, unit='it', total=len(dataloader), disable=spec['tdqm_disable']) as pbar:
@@ -124,7 +124,7 @@ def train_scst(model, dataloader, optim, cider, spec, transform_tok):
     running_reward_baseline = .0
     model.train()
     running_loss = .0
-    seq_len = 30
+    seq_len = 20
     beam_size = 5
     print("trainin SCTS")
     with tqdm(desc='Epoch %d - train' % e, unit='it', total=len(dataloader),  disable=spec['tdqm_disable']) as pbar:
