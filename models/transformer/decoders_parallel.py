@@ -163,7 +163,7 @@ class ParallelPromptDecoder(Module):
         self.max_pref = 0
         self.seg_token = seg_token
         self.seg_token_kw = seg_token_kw
-
+        self.seg_token_val = nn.Parameter(torch.tensor(1.))
         
         kw_tokens = 15
         self.pos_start_sent =  kw_tokens + KG.first_pos_idx
@@ -244,9 +244,9 @@ class ParallelPromptDecoder(Module):
             ksb_out = wordemb_ksb + posemb_ksb
             if self.seg_token == True:
                 if self.seg_token_kw == True:
-                    ksb_out[seg_batch] +=1
+                    ksb_out[seg_batch] += self.seg_token_val
                 else:
-                    ksb_out += 1
+                    ksb_out += self.seg_token_val
 
             # compute the kw tensor
             pad_emb = self.word_emb(torch.tensor([self.padding_idx], device=input.device))
