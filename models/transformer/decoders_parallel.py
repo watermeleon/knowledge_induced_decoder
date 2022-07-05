@@ -163,7 +163,8 @@ class ParallelPromptDecoder(Module):
         self.max_pref = 0
         self.seg_token = seg_token
         self.seg_token_kw = seg_token_kw
-        self.seg_token_val = nn.Parameter(torch.tensor(1.))
+        # self.seg_token_val = nn.Parameter(torch.tensor(1.))
+        self.seg_token_val = 1
         
         kw_tokens = 15
         self.pos_start_sent =  kw_tokens + KG.first_pos_idx
