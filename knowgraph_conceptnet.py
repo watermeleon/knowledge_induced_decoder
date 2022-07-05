@@ -42,8 +42,8 @@ class empty_fais_knn(object):
 #         self.words = words
 
 
-    def get_nn(self,q_emb):
-        return self.words
+    # def get_nn(self,q_emb):
+    #     return self.words
 
 #  FAISS cosine distance
 class get_fais_knn(object):
@@ -261,7 +261,7 @@ class KnowledgeGraph(object):
                     entities , order_rel = self.entities_tokenized_pretok(entities_words)
                 RC_sent.append(entities)
             RC_batch.append(RC_sent)
-        return sent_batch, RC_sent
+        return sent_batch, RC_batch
 
         
     def gen_imagegraph(self,tree,  unigram, entities, order_rel):
