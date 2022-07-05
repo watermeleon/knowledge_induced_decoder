@@ -135,6 +135,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_relatedwords', type=int, default=4)
     parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb','clipemb_pretok'])
     parser.add_argument('--use_faiss', action='store_true')
+    parser.add_argument('--store_promptsets', action='store_true')
 
     #dataset
     parser.add_argument('--nocaps', action='store_true')
@@ -273,13 +274,23 @@ if os.path.exists(fname):
     # for sampling_method , sampling_temp in variationlist:
     #     model.sampling_temp = sampling_temp
     #     model.sampling_method = sampling_method
+    
     output_path = "./generated_sentences/"
     Path(output_path).mkdir(parents=True, exist_ok=True)
-    out_file = args.exp_name +"_coco_" +str("beam") +"_"+str(1)+".json"
-    out_file = output_path + out_file
-    print("Output path:", out_file)
 
-    gen_captions(model, dict_dataloader_test, spec, tokenizerBW_dec, out_file)
+    if args.store_promptsets:
+        dataname = "coco"
+        if args.nocaps:
+            dataname = "nocaps" 
+        out_file = "promptsets_" +dataname+".json"
+        out_file = output_path + out_file
+        print("Output path:", out_file)
+        gen_KW_RC(model, dict_dataloader_test, spec, tokenizerBW_dec, out_file)
+    else:
+        out_file = args.exp_name +"_coco_" +str("beam") +"_"+str(1)+".json"
+        out_file = output_path + out_file
+        print("Output path:", out_file)
+        gen_captions(model, dict_dataloader_test, spec, tokenizerBW_dec, out_file)
 
 else:
     print("path doesn't exist:", fname)
