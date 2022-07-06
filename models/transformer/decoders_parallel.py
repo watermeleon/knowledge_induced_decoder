@@ -164,8 +164,10 @@ class ParallelPromptDecoder(Module):
         self.seg_token = seg_token
         self.seg_token_kw = seg_token_kw
         if seg_param == True:
+            print('using segtoken param')
             self.seg_token_val = nn.Parameter(torch.tensor(1.))
         else:
+            print('using segtoken 1')
             self.seg_token_val = 1
         
         kw_tokens = 15
