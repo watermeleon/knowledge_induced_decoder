@@ -136,7 +136,7 @@ class MSCA(Module):
 
 class ParallelPromptDecoder(Module):
     def __init__(self, vocab_size, max_len, N_dec, padding_idx, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1,
-                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False, pll_dec_type= 1, seg_token_kw=False):
+                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False, pll_dec_type= 1, seg_token_kw=False, seg_param=False):
         super(ParallelPromptDecoder, self).__init__()
         self.d_model = d_model
         # self.pad_tokenid = spec["pad_tokenid"]
@@ -163,8 +163,10 @@ class ParallelPromptDecoder(Module):
         self.max_pref = 0
         self.seg_token = seg_token
         self.seg_token_kw = seg_token_kw
-        # self.seg_token_val = nn.Parameter(torch.tensor(1.))
-        self.seg_token_val = 1
+        if seg_param == True:
+            self.seg_token_val = nn.Parameter(torch.tensor(1.))
+        else:
+            self.seg_token_val = 1
         
         kw_tokens = 15
         self.pos_start_sent =  kw_tokens + KG.first_pos_idx

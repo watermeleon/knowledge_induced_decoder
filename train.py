@@ -78,6 +78,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--seg_token', type=str, default="False", choices=['True', 'False'])
     parser.add_argument('--seg_token_kw', action='store_true')
+    parser.add_argument('--seg_param', action='store_true')
     parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused', 'parallel', 'stacked'])
     parser.add_argument('--pll_dec', type=int, default=1)
     parser.add_argument('--stck_gpt2', action='store_true')
@@ -200,7 +201,7 @@ if __name__ == '__main__':
         decoder = PromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'],h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)
     elif args.decoder == "parallel":
         print("using parallel dec")
-        decoder = ParallelPromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model, pll_dec_type = args.pll_dec, seg_token_kw = args.seg_token_kw)
+        decoder = ParallelPromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model, pll_dec_type = args.pll_dec, seg_token_kw = args.seg_token_kw, seg_param=args.seg_param)
     elif args.decoder == "stacked":
         print("using stacked decoder")
         decoder = StackedPromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, one_kw_token=args.one_kw_token, d_model = args.d_model, seg_token_kw = args.seg_token_kw, use_gpt=args.stck_gpt2)
