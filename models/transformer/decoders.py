@@ -82,7 +82,7 @@ class embedding_table():
 
 class PromptDecoder(Module):
     def __init__(self, vocab_size, max_len, N_dec, padding_idx, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1,
-                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False):
+                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False, seg_token_kw = False, seg_param=False):
         super(PromptDecoder, self).__init__()
         self.d_model = d_model
 
@@ -108,7 +108,12 @@ class PromptDecoder(Module):
         
         kw_tokens = 15
         self.pos_start_sent =  kw_tokens + KG.first_pos_idx
-    
+        if seg_param == True:
+            print('using segtoken param')
+            self.seg_token_val = nn.Parameter(torch.tensor(1.))
+        else:
+            print('using segtoken 1')
+            self.seg_token_val = 1
 
     def forward(self, input, encoder_output, mask_encoder, contextfeat):
         """
@@ -184,7 +189,7 @@ class PromptDecoder(Module):
         out =  wordemb + posemb 
         
         if self.seg_token == True and self.stateful_1 < 2:
-            out[:,:-seq_len,:] += 1
+            out[:,:-seq_len,:] += self.seg_token_val
         mask_pad = seq.clone().detach()
         mask_pad = mask_pad != 0
         mask_pad[:,-seq_len:] = mask_queries.squeeze(-1)

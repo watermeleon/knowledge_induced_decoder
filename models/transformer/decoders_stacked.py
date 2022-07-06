@@ -49,7 +49,7 @@ class DecoderLayer(Module):
 
 class StackedPromptDecoder(Module):
     def __init__(self, vocab_size, max_len, N_dec, padding_idx, d_model=512, d_k=64, d_v=64, h=8, d_ff=2048, dropout=.1,
-                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False, one_kw_token = False, seg_token_kw=False, use_gpt=False):
+                 self_att_module=None, enc_att_module=None, self_att_module_kwargs=None, enc_att_module_kwargs=None,  spec = None, seg_token=False, KG = None, enc_model="ViT", pt_tokemb = False, one_kw_token = False, seg_token_kw=False, use_gpt=False , seg_param=False):
         super(StackedPromptDecoder, self).__init__()
         self.d_model = d_model
 
@@ -88,6 +88,13 @@ class StackedPromptDecoder(Module):
             self.gpt.eval()
             self.gpt_embedding_size = self.gpt.transformer.wte.weight.shape[1]
             self.fc_gpt = nn.Linear(d_model, self.gpt_embedding_size , bias=False)
+
+        if seg_param == True:
+            print('using segtoken param')
+            self.seg_token_val = nn.Parameter(torch.tensor(1.))
+        else:
+            print('using segtoken 1')
+            self.seg_token_val = 1
 
 
     def forward(self, input, encoder_output, mask_encoder, contextfeat, gen_sent = False):
@@ -191,7 +198,7 @@ class StackedPromptDecoder(Module):
             posemb_ksb = self.pos_emb(position_batch)
             ksb_out = wordemb_ksb + posemb_ksb
             if self.seg_token == True:
-                ksb_out += 1
+                ksb_out += self.seg_token_val
 
             # compute the kw tensor
             pad_emb = self.word_emb(torch.tensor([self.padding_idx], device=input.device))
