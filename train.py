@@ -198,13 +198,13 @@ if __name__ == '__main__':
     max_inp_seq= 128
     if args.decoder == "kg_infused":
         print("using normal dec")
-        decoder = PromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'],h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)
+        decoder = PromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'],h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model, seg_param=args.seg_param)
     elif args.decoder == "parallel":
         print("using parallel dec")
         decoder = ParallelPromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model, pll_dec_type = args.pll_dec, seg_token_kw = args.seg_token_kw, seg_param=args.seg_param)
     elif args.decoder == "stacked":
         print("using stacked decoder")
-        decoder = StackedPromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, one_kw_token=args.one_kw_token, d_model = args.d_model, seg_token_kw = args.seg_token_kw, use_gpt=args.stck_gpt2)
+        decoder = StackedPromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, one_kw_token=args.one_kw_token, d_model = args.d_model, seg_token_kw = args.seg_token_kw, use_gpt=args.stck_gpt2, seg_param=args.seg_param)
     elif args.decoder == "vanilla":
        print("using vanilla decoder")
        decoder = VanillaDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, enc_model = args.enc_model, dropout=args.dropout, d_model = args.d_model, seg_token_kw = args.seg_token_kw, seg_param=args.seg_param)
