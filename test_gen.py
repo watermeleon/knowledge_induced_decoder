@@ -111,7 +111,8 @@ if __name__ == '__main__':
     parser.add_argument('--N_enc', type=int, default=3)
 
     parser.add_argument('--seg_token', type=str, default="False", choices=['True', 'False'])
-    parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused', 'parallel', 'stacked'])
+    parser.add_argument('--seg_token_kw', action='store_true')
+    parser.add_argument('--seg_param' ,action='store_true')    parser.add_argument('--decoder', type=str, default="kg_infused", choices=['vanilla', 'kg_infused', 'parallel', 'stacked'])
     parser.add_argument('--one_kw_token', action='store_true') # for the stackeddecoder
     parser.add_argument('--d_model', type=int, default=512)
     parser.add_argument('--tf_model_conf', type=str, default="alt", choices=['alt', 'base', 'tiny']) # if not alt, overwrites other head and dmodel param
