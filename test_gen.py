@@ -278,16 +278,16 @@ if os.path.exists(fname):
     output_path = "./generated_sentences/"
     Path(output_path).mkdir(parents=True, exist_ok=True)
 
+    dataname = "_coco"
+    if args.nocaps:
+        dataname = "_nocaps" 
     if args.store_promptsets:
-        dataname = "coco"
-        if args.nocaps:
-            dataname = "nocaps" 
         out_file = "promptsets_" +dataname+".json"
         out_file = output_path + out_file
         print("Output path:", out_file)
         gen_KW_RC(model, dict_dataloader_test, spec, tokenizerBW_dec, out_file)
     else:
-        out_file = args.exp_name +"_coco_" +str("beam") +"_"+str(1)+".json"
+        out_file = args.exp_name + dataname+".json"
         out_file = output_path + out_file
         print("Output path:", out_file)
         gen_captions(model, dict_dataloader_test, spec, tokenizerBW_dec, out_file)
