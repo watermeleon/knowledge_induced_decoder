@@ -173,10 +173,19 @@ if __name__ == '__main__':
     cls_tok = tokenizerBW.cls_token
     spec = {}
     # do this because bert tokenizer doesn't sue bos, but cls, and sep i.s.o. eos..
-    sample_txt = tokenizerBW("[PAD]").input_ids
-    spec['eos_tokenid'] =  tokenizerBW.sep_token_id if cls_tok is not None else sample_txt[-1]
-    spec['bos_tokenid'] =  tokenizerBW.cls_token_id if cls_tok is not None else sample_txt[0]
-    spec['pad_tokenid'] = sample_txt[1]
+    if args.tokenizer == "clip":
+        spec['pad_token'] = '[PAD]'
+        sample_txt = tokenizerBW(spec['pad_token'] ).input_ids
+        spec['eos_tokenid'] =  tokenizerBW.sep_token_id if cls_tok is not None else sample_txt[-1]
+        spec['bos_tokenid'] =  tokenizerBW.cls_token_id if cls_tok is not None else sample_txt[0]
+        spec['pad_tokenid'] = sample_txt[1]
+    else:
+        stop_token = "."
+        spec['eos_tokenid'] = tokenizerBW.encode(stop_token)[0]
+        spec['bos_tokenid'] = 0
+        spec['pad_tokenid'] = 0
+        spec['pad_token'] = tokenizerBW.decode(spec['pad_tokenid'])
+
     spec['tdqm_disable'] = False
     spec["device"] = device
     print("Selected specifications:", spec)
@@ -219,20 +228,23 @@ if __name__ == '__main__':
                                      attention_module_kwargs={'m': args.m}, dropout=args.dropout, d_model = args.d_model, h=args.head)
 
     seg_token = args.seg_token == "True"
-    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW, device = device, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw, norel= args.no_rel_label, only_l2r = args.rel_only_l2r, use_faiss = args.use_faiss)
+    knowledge_graph = KnowledgeGraph(transform_tok = tokenizerBW_clip, device = device, edge_select=args.edge_select, spec = spec, kw_size = args.num_keywords, rw_size = args.num_relatedwords , enc_model = args.enc_model, only_kw=args.only_kw, norel= args.no_rel_label, only_l2r = args.rel_only_l2r, use_faiss = args.use_faiss, rc_posidx2 =args.rc_posidx2, cn_version=args.cn_version)
 
+    max_inp_seq= 128
     if args.decoder == "kg_infused":
         print("using normal dec")
-        decoder = PromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'],h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model)
+        decoder = PromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'],h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model, seg_param=args.seg_param)
     elif args.decoder == "parallel":
         print("using parallel dec")
-        decoder = ParallelPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model,pll_dec_type = args.pll_dec)
+        decoder = ParallelPromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, d_model = args.d_model, pll_dec_type = args.pll_dec, seg_token_kw = args.seg_token_kw, seg_param=args.seg_param)
     elif args.decoder == "stacked":
         print("using stacked decoder")
-        decoder = StackedPromptDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, one_kw_token=args.one_kw_token, d_model = args.d_model)
+        decoder = StackedPromptDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, seg_token= seg_token, KG = knowledge_graph , enc_model= args.enc_model, spec=spec, pt_tokemb=args.pt_token_emb, dropout=args.dropout, one_kw_token=args.one_kw_token, d_model = args.d_model, seg_token_kw = args.seg_token_kw, use_gpt=args.stck_gpt2, seg_param=args.seg_param)
     elif args.decoder == "vanilla":
        print("using vanilla decoder")
-       decoder = VanillaDecoder(len(tokenizerBW), 128, args.N_dec, spec['pad_tokenid'], h=args.head, enc_model = args.enc_model, dropout=args.dropout, d_model = args.d_model)
+       decoder = VanillaDecoder(len(tokenizerBW), max_inp_seq, args.N_dec, spec['pad_tokenid'], h=args.head, enc_model = args.enc_model, dropout=args.dropout, d_model = args.d_model, seg_token_kw = args.seg_token_kw, seg_param=args.seg_param)
+
+
     model = Transformer(spec['bos_tokenid'], encoder, decoder).to(device)
     model.sampling_temp = args.sampling_temp
     model.sampling_method = args.sampling_method
