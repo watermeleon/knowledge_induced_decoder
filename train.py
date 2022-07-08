@@ -122,9 +122,9 @@ if __name__ == '__main__':
             args.d_model = 384
             args.head = 6
 
-    wandb.init(project="hyptuning3" ,name=args.exp_name, entity="watermelontology")
-    wandb.config.update(args)
-    print(wandb.config)
+    # wandb.init(project="hyptuning3" ,name=args.exp_name, entity="watermelontology")
+    # wandb.config.update(args)
+    # print(wandb.config)
 
     writer = SummaryWriter(log_dir=os.path.join(args.logs_folder, args.exp_name))
 
@@ -332,7 +332,7 @@ if __name__ == '__main__':
         if use_rl:
             ep_metrics["reward"] = reward
             ep_metrics["reward_baseline"] = reward_baseline
-        wandb.log(ep_metrics)
+        # wandb.log(ep_metrics)
         # Prepare for next epoch
         best = False
         if val_cider >= best_cider:
