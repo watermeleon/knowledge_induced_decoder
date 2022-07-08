@@ -140,6 +140,7 @@ if __name__ == '__main__':
     parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb','clipemb_pretok'])
     parser.add_argument('--use_faiss', action='store_true')
     parser.add_argument('--store_promptsets', action='store_true')
+    parser.add_argument('--cn_version', type=str, default="",  choices=["", "noname",'imgnet1k'])
 
     #dataset
     parser.add_argument('--nocaps', action='store_true')
