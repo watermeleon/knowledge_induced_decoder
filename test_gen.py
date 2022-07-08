@@ -133,6 +133,8 @@ if __name__ == '__main__':
     parser.add_argument('--only_kw', action='store_true')
     parser.add_argument('--no_rel_label', action='store_true')
     parser.add_argument('--rel_only_l2r', action='store_true')
+    parser.add_argument('--rc_posidx2', action='store_true')
+
     parser.add_argument('--num_keywords', type=int, default=4)
     parser.add_argument('--num_relatedwords', type=int, default=4)
     parser.add_argument('--edge_select', type=str, default="random", choices=['random', 'clipemb','clipemb_pretok'])
@@ -158,6 +160,8 @@ if __name__ == '__main__':
         if args.tf_model_conf == "tiny":
             args.d_model = 384
             args.head = 6
+
+    tokenizerBW_clip =  CLIPTokenizerFast.from_pretrained("./models/tokenizers_stored/CLIPTokenizerFast")
 
       # load transformer numericalizer/tokenizer
     if args.tokenizer == "bert":
