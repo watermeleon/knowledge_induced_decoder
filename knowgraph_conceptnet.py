@@ -143,7 +143,8 @@ class KnowledgeGraph(object):
 
         if use_faiss == True:
             self.edge_select = "clipemb_faiss"        
-            self.newlookupdict = self.create_faiss_nested(self.lookupdict)
+            if not only_kw:
+                self.newlookupdict = self.create_faiss_nested(self.lookupdict)
             self.kw_sim = get_fais_knn(np.array(self.all_keywords), np.copy(self.all_keywordembed.detach().cpu().numpy()), k= self.kw_size)
 
 
