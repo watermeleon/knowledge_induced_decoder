@@ -118,6 +118,7 @@ if __name__ == '__main__':
     parser.add_argument('--d_model', type=int, default=512)
     parser.add_argument('--tf_model_conf', type=str, default="alt", choices=['alt', 'base', 'tiny']) # if not alt, overwrites other head and dmodel param
     parser.add_argument('--pll_dec', type=int, default=1)
+    parser.add_argument('--stck_gpt2', action='store_true')
 
 
     # training specifics
