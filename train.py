@@ -41,7 +41,7 @@ random.seed(seed_num)
 torch.manual_seed(seed_num)
 np.random.seed(seed_num)
 
-set_start_method('forkserver')
+# set_start_method('forkserver')
 exec(open("training_functions.py").read())
 
 
