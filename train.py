@@ -22,8 +22,8 @@ from torch.utils.tensorboard import SummaryWriter
 import argparse, os, pickle
 import numpy as np
 import itertools
-import multiprocessing
-# from multiprocessing import set_start_method, Pool
+# import multiprocessing
+from multiprocessing import set_start_method, Pool
 from shutil import copyfile
 from torch import autograd
 from transformers import AutoTokenizer, CLIPTokenizer, CLIPTokenizerFast, GPT2TokenizerFast, GPT2Tokenizer
@@ -41,7 +41,7 @@ random.seed(seed_num)
 torch.manual_seed(seed_num)
 np.random.seed(seed_num)
 
-multiprocessing.set_start_method('forkserver')
+set_start_method('forkserver')
 exec(open("training_functions.py").read())
 
 
