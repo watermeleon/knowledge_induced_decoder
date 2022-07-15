@@ -119,6 +119,7 @@ def train_xe(model, dataloader, optim, spec, vocab_size):
 
 def train_scst(model, dataloader, optim, cider, spec, transform_tok):
     # Training with self-critical
+    set_start_method('forkserver')
     tokenizer_pool = Pool()
     running_reward = .0
     running_reward_baseline = .0
