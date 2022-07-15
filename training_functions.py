@@ -119,7 +119,7 @@ def train_xe(model, dataloader, optim, spec, vocab_size):
 
 def train_scst(model, dataloader, optim, cider, spec, transform_tok):
     # Training with self-critical
-    # tokenizer_pool = multiprocessing.Pool()
+    tokenizer_pool = Pool()
     running_reward = .0
     running_reward_baseline = .0
     model.train()
@@ -145,10 +145,9 @@ def train_scst(model, dataloader, optim, cider, spec, transform_tok):
             #     print("\n",caps_gen, "\n")
             #     break
             # this puts it in lists or something:
-            tokenizer_pool = Pool()
+            # tokenizer_pool = Pool()
             caps_gen, caps_gt = tokenizer_pool.map(evaluation.PTBTokenizer.tokenize, [caps_gen, caps_gt])
-            tokenizer_pool.close()
-            tokenizer_pool.join()
+
             # caps_gt = evaluation.PTBTokenizer.tokenize(caps_gt)
             # caps_gen = evaluation.PTBTokenizer.tokenize(caps_gen)
 
@@ -171,4 +170,6 @@ def train_scst(model, dataloader, optim, cider, spec, transform_tok):
     loss = running_loss / len(dataloader)
     reward = running_reward / len(dataloader)
     reward_baseline = running_reward_baseline / len(dataloader)
+    tokenizer_pool.close()
+    tokenizer_pool.join()
     return loss, reward, reward_baseline
