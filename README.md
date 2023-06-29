@@ -5,7 +5,9 @@
   <img src="images/mymodel_selfat_crossatt.png" alt="Meshed-Memory Transformer" width="980"/>
 </p>
 
-### The text below is still from Meshed memory:
+### To train or test the algorithm: 
+The training setup is similar to that of Meshed memory: https://github.com/aimagelab/meshed-memory-transformer
+
 Run `python test.py` using the following arguments:
 This repository contains the reference code for the paper _[Meshed-Memory Transformer for Image Captioning](https://arxiv.org/abs/1912.08226)_ (CVPR 2020).
 
