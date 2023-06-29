@@ -18,7 +18,6 @@ To run our model, run either `parse_coco_dynamic.py` or `parse_nocaps_dynamic.py
 1. To gather the top10th keywords follow the notebook:  
     - `keywords_openwebtext.ipynb`
 2. We already provide the conceptnet file which only kept the edges where both concepts are english.
-    - How ConceptNet is created: **TODO**
 3. Create the filetered nested dict: 
     - `python gen_nested_CN.py`
 4. For each item in the English conceptnet, store its embeddings in :
