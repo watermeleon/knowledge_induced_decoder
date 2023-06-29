@@ -33,18 +33,6 @@ class empty_fais_knn(object):
         return []
 
 
-
-# class empty_fais_knn(object):
-#     def __init__(self, words):
-#         words = np.squeeze(words).tolist()
-#         if np.array(words).shape == (3,):
-#             words = [words]
-#         self.words = words
-
-
-    # def get_nn(self,q_emb):
-    #     return self.words
-
 #  FAISS cosine distance
 class get_fais_knn(object):
     def __init__(self, words, embeddings, k = 4):
@@ -66,25 +54,6 @@ class get_fais_knn(object):
             nn_words = [nn_words]
         return nn_words
 
-#   FAISS but L2 distance
-# class get_fais_knn(object):
-#     def __init__(self, words, embeddings, k = 4):
-#         self.dimension = 512    # dimensions of each vector                         
-#         self.k = k       # return 3 nearest neighbours        
-#         self.embeddings = embeddings.astype('float32')
-#         self.words = words
-#         self.index = faiss.IndexFlatL2(self.dimension) 
-
-#         # faiss.normalize_L2(self.embeddings)
-#         self.index.add(self.embeddings)   # add the vectors and update the index
-    
-#     def get_nn(self, q_emb):
-#         # faiss.normalize_L2(q_emb)
-#         _, indices = self.index.search(q_emb, self.k)
-#         nn_words = np.squeeze(self.words[indices]).tolist()
-#         if self.k == 1:
-#             nn_words = [nn_words]
-#         return nn_words
 
 class KnowledgeGraph(object):
     """
@@ -129,7 +98,6 @@ class KnowledgeGraph(object):
         if spec is not None:
             self.remlist = [spec["bos_tokenid"], spec["eos_tokenid"]]
     
-        # pth_clipemb = "../data_files/keyword_embedding_"+str(enc_model)+".pkl"
         pth_clipemb = "../data_files/keyword_embedding_ViT-B_32"+cn_version+".pkl"
         
         with open(pth_clipemb, 'rb') as f:
@@ -158,16 +126,6 @@ class KnowledgeGraph(object):
                 edges_str_list = np.array(all_edges[:,0])
                 edges_emb = torch.tensor(np.vstack(all_edges[:, 1]).astype(np.float32)).to(self.device)
                 unigram_nn_obj = get_fais_knn(edges_str_list, np.copy(edges_emb.detach().cpu().numpy()), k= self.rw_size)
-            # if len(all_edges) <= self.rw_size:
-            #     if len(all_edges) == 0:
-            #         edges_str_list = np.array([])
-            #     else:
-            #         edges_str_list = np.array(all_edges[:,0])
-            #     unigram_nn_obj = empty_fais_knn(edges_str_list)
-            # else:
-            #     edges_str_list = np.array(all_edges[:,0])
-            #     edges_emb = torch.tensor(np.vstack(all_edges[:, 1]).astype(np.float32)).to(self.device)
-            #     unigram_nn_obj = get_fais_knn(edges_str_list, np.copy(edges_emb.detach().cpu().numpy()), k= self.rw_size)
             newlookupdict[unigram] = unigram_nn_obj
         return newlookupdict
 
