@@ -5,7 +5,6 @@ import random
 from data import ImageDetectionsField, TextField, RawField, ClipEmbDetectionsField
 from data import COCO, DataLoader, NoCaps
 import evaluation
-# from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory
 from models.transformer import Transformer, MemoryAugmentedEncoder, PromptDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder, ParallelPromptDecoder , StackedPromptDecoder
 from knowgraph_conceptnet import KnowledgeGraph
 from transformers import CLIPTokenizer, CLIPTokenizerFast, AutoTokenizer
@@ -43,7 +42,6 @@ def predict_captions(model, dataloader, spec, transform_tok):
             caps_gt = [tuple([ftfy.fix_text(sent) for sent in img_batch]) for img_batch in caps_gt]
 
 
-            # caps_gt = [tuple([sent.encode('latin-1').decode('utf-8') for sent in img_batch]) for img_batch in caps_gt]
             print("caps GT:", caps_gt, "\n")
             for i, (gts_i, gen_i) in enumerate(zip(caps_gt, caps_gen)):
                 gen['%d_%d' % (it, i)] = [gen_i.strip(), ]
@@ -145,7 +143,7 @@ if __name__ == '__main__':
     # initialize training specifications
     cls_tok = tokenizerBW.cls_token
     spec = {}
-    # do this because bert tokenizer doesn't sue bos, but cls, and sep i.s.o. eos..
+    # do this because bert tokenizer doesn't use bos, but cls, and sep i.s.o. eos..
     sample_txt = tokenizerBW("[PAD]").input_ids
     spec['eos_tokenid'] =  tokenizerBW.sep_token_id if cls_tok is not None else sample_txt[-1]
     spec['bos_tokenid'] =  tokenizerBW.cls_token_id if cls_tok is not None else sample_txt[0]
@@ -169,7 +167,6 @@ if __name__ == '__main__':
     if args.nocaps:
         dataset = NoCaps(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder,cocoid_field= clipemb_field)
         train_dataset, val_dataset, test_dataset = dataset.splits
-        #big time cheating:
         test_dataset = val_dataset
     else:
         dataset = COCO(image_field, text_field, 'coco/images/', args.annotation_folder, args.annotation_folder,cocoid_field= clipemb_field)
@@ -207,8 +204,7 @@ if __name__ == '__main__':
     model = Transformer(spec['bos_tokenid'], encoder, decoder).to(device)
     model.sampling_temp = args.sampling_temp
     model.sampling_method = args.sampling_method
-    # data = torch.load('meshed_memory_transformer.pth')
-    # model.load_state_dict(data['state_dict'])
+
 
 if args.resume == "last":
     fname = 'saved_models/%s_last.pth' % args.exp_name
@@ -227,8 +223,6 @@ if os.path.exists(fname):
     np.random.set_state(data['numpy_rng_state'])
     random.setstate(data['random_rng_state'])
     model.load_state_dict(data['state_dict'], strict=False)
-    # optim.load_state_dict(data['optimizer'])
-    # scheduler.load_state_dict(data['scheduler'])
     start_epoch = data['epoch'] + 1
     best_cider = data['best_cider']
     patience = data['patience']

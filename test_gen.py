@@ -6,7 +6,6 @@ import random
 from data import ImageDetectionsField, TextField, RawField, ClipEmbDetectionsField
 from data import COCO, DataLoader, NoCaps
 import evaluation
-# from models.transformer import Transformer, MemoryAugmentedEncoder, MeshedDecoder, ScaledDotProductAttentionMemory
 from models.transformer import Transformer, MemoryAugmentedEncoder, PromptDecoder, ScaledDotProductAttentionMemory, MultiLevelEncoder, ScaledDotProductAttention, VanillaDecoder, ParallelPromptDecoder , StackedPromptDecoder
 from knowgraph_conceptnet import KnowledgeGraph
 from transformers import CLIPTokenizer, CLIPTokenizerFast, AutoTokenizer
@@ -33,7 +32,6 @@ def gen_captions(model, dataloader, spec, transform_tok, out_file):
     all_captions = []
     with tqdm(desc='Evaluation', unit='it', total=len(dataloader)) as pbar:
         for it, (images, caps_gt) in enumerate(iter(dataloader)):
-            # images = images.to(device)
             images, img_ids = images
             context_feats =  torch.stack(caps_gt[1])
             context_feats = context_feats[:,0,:,:]
@@ -47,7 +45,6 @@ def gen_captions(model, dataloader, spec, transform_tok, out_file):
             for (img_id, gen_i) in zip(img_ids, caps_gen):
                 entry = {"caption": gen_i, "image_id":img_id.item() }
                 all_captions.append(entry)
-            # break
             pbar.update()
 
     with open(out_file, 'w') as f:
@@ -66,17 +63,12 @@ def gen_KW_RC(model, dataloader, spec, transform_tok, out_file):
             context_feats = context_feats[:,0,:,:]
             images, context_feats = images.to(device), context_feats.to(device)
             with torch.no_grad():
-                # out, _ = model.beam_search(images, context_feats, 40, spec['eos_tokenid'], 5, out_size=1)
                 KW_batch, RC_batch = model.decoder.KG.get_KW_RC(context_feats)
-
-
-            # caps_gen = [transform_tok.decode(sent) for sent in out] 
-            # caps_gen = [sent.split("<|endoftext|>")[0].strip() for sent in caps_gen]
 
             for (img_id, kw_i, rc_i) in zip(img_ids, KW_batch, RC_batch):
                 entry = {"kw": kw_i, "rc": rc_i, "image_id":img_id.item() }
                 all_captions.append(entry)
-            # break
+
             pbar.update()
 
     with open(out_file, 'w') as f:
@@ -256,8 +248,7 @@ if __name__ == '__main__':
     model = Transformer(spec['bos_tokenid'], encoder, decoder).to(device)
     model.sampling_temp = args.sampling_temp
     model.sampling_method = args.sampling_method
-    # data = torch.load('meshed_memory_transformer.pth')
-    # model.load_state_dict(data['state_dict'])
+
 
 if args.resume == "last":
     fname = 'saved_models/%s_last.pth' % args.exp_name
@@ -276,8 +267,7 @@ if os.path.exists(fname):
     np.random.set_state(data['numpy_rng_state'])
     random.setstate(data['random_rng_state'])
     model.load_state_dict(data['state_dict'], strict=False)
-    # optim.load_state_dict(data['optimizer'])
-    # scheduler.load_state_dict(data['scheduler'])
+
     start_epoch = data['epoch'] + 1
     best_cider = data['best_cider']
     patience = data['patience']
@@ -287,13 +277,6 @@ if os.path.exists(fname):
 
     dict_dataset_test = test_dataset.image_dictionary({'image': image_field, 'text': RawField(), "img_id": clipemb_field})
     dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size, num_workers=args.workers,shuffle=True)
-
-    # Sampling options: ['topk', 'beam', 'nucleus'])
-    # variationlist = [("nucleus", 1),("topk", 1), ("beam", 1)]
-    # #  ("topk", 0.2),("topk", 2)]
-    # for sampling_method , sampling_temp in variationlist:
-    #     model.sampling_temp = sampling_temp
-    #     model.sampling_method = sampling_method
     
     output_path = "./generated_sentences/"
     Path(output_path).mkdir(parents=True, exist_ok=True)

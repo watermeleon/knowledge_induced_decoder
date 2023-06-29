@@ -49,7 +49,6 @@ class get_fais_knn(object):
         faiss.normalize_L2(q_emb)
         _, indices = self.index.search(q_emb, self.k)
         nn_words = np.squeeze(self.words[indices]).tolist()
-        # print("shape returned faiss:", np.array(nn_words).shape, nn_words)
         if self.k == 1:
             nn_words = [nn_words]
         return nn_words
@@ -181,7 +180,6 @@ class KnowledgeGraph(object):
             else:
                 combitoks = ent[0] + ent[1]
             combitoklist.append(combitoks)
-            # print("entities:", self.tokenizer_dec.decode(combitoks))
             order_rel.append(ent[2])
 
         return combitoklist , order_rel
@@ -215,7 +213,6 @@ class KnowledgeGraph(object):
                 if str(unigram) not in self.special_tags:
                     entities_words = self.get_ranked_edges(unigram, max_edges = self.rw_size, image_emb = all_img_embs[sent_it])
                 entities,  order_rel = [], []
-                # print("entities words:", entities_words)
                 if len(entities_words) != 0:
                     entities , order_rel = self.entities_tokenized_pretok(entities_words)
                 RC_sent.append(entities)
@@ -272,14 +269,12 @@ class KnowledgeGraph(object):
 
             for token_it, token in enumerate(split_sent):  
                 unigram = split_sent_vanilla[token_it]
-                # print("keyword:", unigram )  
                 entities_words, entities,  order_rel = [], [], []
 
                 if not self.only_kw:
                     if str(unigram) not in self.special_tags:
                         entities_words = self.get_ranked_edges(unigram, max_edges = max_edges, image_emb = image_emb[sent_it])
                     entities,  order_rel = [], []
-                    # print("entities words:", entities_words)
                     if len(entities_words) != 0:
                         entities , order_rel = self.entities_tokenized_pretok(entities_words)
                 if self.use_imagegraph:

@@ -111,15 +111,13 @@ def train_xe(model, dataloader, optim, spec, vocab_size):
             pbar.set_postfix(loss=running_loss / (it + 1))
             pbar.update()
             scheduler.step()
-            # if it > 1000:
-            #     break
+
     loss = running_loss / len(dataloader)
     return loss
 
 
 def train_scst(model, dataloader, optim, cider, spec, transform_tok):
-    # Training with self-critical
-    # set_start_method('forkserver')
+
     tokenizer_pool = Pool()
     running_reward = .0
     running_reward_baseline = .0
@@ -141,16 +139,7 @@ def train_scst(model, dataloader, optim, cider, spec, transform_tok):
             caps_gt = list(itertools.chain(*([c, ] * beam_size for c in caps_gt)))
             caps_gen = [transform_tok.decode(sent) for sent in outs.view(-1, seq_len)] 
             caps_gen = [sent.split("<|endoftext|>")[0] for sent in caps_gen] 
-            # total its:14161
-            # if it == 2265:
-            #     print("\n",caps_gen, "\n")
-            #     break
-            # this puts it in lists or something:
-            # tokenizer_pool = Pool()
             caps_gen, caps_gt = tokenizer_pool.map(evaluation.PTBTokenizer.tokenize, [caps_gen, caps_gt])
-
-            # caps_gt = evaluation.PTBTokenizer.tokenize(caps_gt)
-            # caps_gen = evaluation.PTBTokenizer.tokenize(caps_gen)
 
             reward = cider.compute_score(caps_gt, caps_gen)[1].astype(np.float32)
             reward = torch.from_numpy(reward).to(device).view(detections.shape[0], beam_size)
@@ -171,6 +160,5 @@ def train_scst(model, dataloader, optim, cider, spec, transform_tok):
     loss = running_loss / len(dataloader)
     reward = running_reward / len(dataloader)
     reward_baseline = running_reward_baseline / len(dataloader)
-    # tokenizer_pool.close()
-    # tokenizer_pool.join()
+
     return loss, reward, reward_baseline

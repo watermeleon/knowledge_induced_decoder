@@ -22,12 +22,10 @@ from torch.utils.tensorboard import SummaryWriter
 import argparse, os, pickle
 import numpy as np
 import itertools
-# import multiprocessing
 from multiprocessing import set_start_method, Pool
 from shutil import copyfile
 from torch import autograd
 from transformers import AutoTokenizer, CLIPTokenizer, CLIPTokenizerFast, GPT2TokenizerFast, GPT2Tokenizer
-# from torch.utils.data import IterableDataset  
 
 from models.beam_search.gpt2_generation import generate_beam , generate2
 
@@ -41,7 +39,6 @@ random.seed(seed_num)
 torch.manual_seed(seed_num)
 np.random.seed(seed_num)
 
-# set_start_method('forkserver')
 exec(open("training_functions.py").read())
 
 
@@ -232,7 +229,6 @@ if __name__ == '__main__':
 
     scheduler = LambdaLR(optim, lambda_lr)
     loss_fn = NLLLoss(ignore_index=spec['pad_tokenid'])
-    # changed by leon
     use_rl = False
 
     best_cider = .0
@@ -277,7 +273,7 @@ if __name__ == '__main__':
     else:
         evaluate_metrics = evaluate_metrics_standard
 
-    ########################################################################################################################################################################
+    # Start of the training Procedure
     print("Training starts")
     for e in range(start_epoch, start_epoch + 100):
         dataloader_train = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers,
@@ -287,8 +283,7 @@ if __name__ == '__main__':
                                            num_workers=args.workers)
         dict_dataloader_val = DataLoader(dict_dataset_val, batch_size=args.batch_size // 5)
         dict_dataloader_test = DataLoader(dict_dataset_test, batch_size=args.batch_size // 5)
-        # scores = evaluate_metrics(model, dict_dataloader_val, spec, transform_tok = tokenizerBW_dec)
-        # print("these scores be all like:", scores)
+
         if not use_rl:
             train_loss = train_xe(model, dataloader_train, optim, spec, len(tokenizerBW))
             writer.add_scalar('data/train_loss', train_loss, e)
@@ -334,6 +329,7 @@ if __name__ == '__main__':
             ep_metrics["reward"] = reward
             ep_metrics["reward_baseline"] = reward_baseline
         wandb.log(ep_metrics)
+        
         # Prepare for next epoch
         best = False
         if val_cider >= best_cider:
