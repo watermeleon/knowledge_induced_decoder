@@ -1,5 +1,5 @@
-# Knowledge Graph reasoning
-
+# KIP: Knowledge Injection through Prompting
+The code for my Master Thesis
 
 <p align="center">
   <img src="images/mymodel_selfat_crossatt.png" alt="Meshed-Memory Transformer" width="980"/>
