@@ -1,5 +1,5 @@
 # KIP: Knowledge Injection through Prompting
-The code for my Master Thesis
+The code for my Master Thesis. To generate the context graph, open the folder `feature_generation` and follow the steps. 
 
 <p align="center">
   <img src="images/mymodel_selfat_crossatt.png" alt="Meshed-Memory Transformer" width="980"/>
